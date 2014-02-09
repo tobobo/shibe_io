@@ -26,17 +26,21 @@ describe 'router', ->
 
       request.post host + '/incoming',
         form: 
-          from: 'person@a.com'
-          to: ['person@b.com', 'good@shibe.io']
-          subject: '200 doge'
+          mandrill_events:
+            JSON.stringify [
+              ts: (new Date).getTime()
+              msg:
+                from_email: 'person@a.com',
+                to: ['Person B <person@b.com>', 'Good Shibe <good@shibe.io>']
+                subject: '200 doge'
+            ]
       , (error, response, body) ->
         bodyText = body
-        body = JSON.parse body
+
         expect response.statusCode
           .toBe 200
 
         expect bodyText.length
           .toBeGreaterThan 0
-
 
         done()
