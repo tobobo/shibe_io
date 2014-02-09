@@ -1,1 +1,1 @@
-web: coffee target/server.js
+web: coffee server.coffee
