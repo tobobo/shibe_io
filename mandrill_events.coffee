@@ -1,5 +1,3 @@
-RSVP = require 'rsvp'
-
 module.exports =
 
   getRecipients: (to) ->
