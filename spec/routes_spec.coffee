@@ -8,8 +8,11 @@ describe 'router', ->
   describe 'index', ->
 
     it 'should have content', (done) ->
-
-      request.get host, (error, response, body) ->
+      requestHost = 'http://www.shibe.io'
+      request.get host,
+        headers:
+          host: requestHost
+      , (error, response, body) ->
 
         expect response.statusCode
           .toBe 200
@@ -18,9 +21,26 @@ describe 'router', ->
           .toBeGreaterThan 0
 
         expect response.headers['access-control-allow-origin']
-          .toBe '*.shibe.io'
+          .toBe requestHost
 
         done()
+
+    it 'should not return an access-control header for an incorrect domain', (done) ->
+      requestHost = 'http://something.else'
+      request.get host,
+        headers:
+          host: requestHost
+      , (error, response, body) ->
+
+        expect response.statusCode
+          .toBe 200
+
+        expect response.headers['access-control-allow-origin']
+          .toBe undefined
+
+        done()
+
+
 
 
   describe 'inbox', ->
@@ -28,6 +48,8 @@ describe 'router', ->
     it 'should respond to email content', (done) ->
 
       request.post host + '/incoming',
+        headers:
+          host: 'whatever'
         form: 
           mandrill_events:
             JSON.stringify [
@@ -45,8 +67,5 @@ describe 'router', ->
 
         expect bodyText.length
           .toBeGreaterThan 0
-
-        expect response.headers['access-control-allow-origin']
-          .toBe '*.shibe.io'
 
         done()
