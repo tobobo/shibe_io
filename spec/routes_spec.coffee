@@ -17,6 +17,9 @@ describe 'router', ->
         expect body.length 
           .toBeGreaterThan 0
 
+        expect response.headers['access-control-allow-origin']
+          .toBe '*.shibe.io'
+
         done()
 
 
@@ -42,5 +45,8 @@ describe 'router', ->
 
         expect bodyText.length
           .toBeGreaterThan 0
+
+        expect response.headers['access-control-allow-origin']
+          .toBe '*.shibe.io'
 
         done()
