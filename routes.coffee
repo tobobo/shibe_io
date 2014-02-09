@@ -9,9 +9,10 @@ module.exports = (app) ->
     stringData = JSON.stringify
       email: data
 
-    for e in data.mandrill_events
-      console.log 'EVENT!!! ------'
-      for k, v in e
-        console.log "#{k} ---", v
+    events = JSON.parse data.mandrill_events
+    for e in events
+      console.log 'EVENT!!! -----'
+      for k, v of e
+        console.log "#{k} ---- v"
     res.write stringData
     res.end()
