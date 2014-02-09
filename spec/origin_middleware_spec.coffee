@@ -5,11 +5,11 @@ describe 'origin middleware', ->
   next = ->
 
   it 'allows subdomains of shibe.io', ->
-    host = 'http://www.shibe.io'
+    origin = 'http://www.shibe.io'
 
     req = 
       headers:
-        host: host
+        origin: origin
 
     originHeader = null
 
@@ -21,14 +21,14 @@ describe 'origin middleware', ->
     origin_middleware req, res, next
 
     expect originHeader
-      .toBe host
+      .toBe origin
 
   it 'allows localhost', ->
-    host = 'localhost:1234'
+    origin = 'localhost:1234'
 
     req = 
       headers:
-        host: host
+        origin: origin
 
     originHeader = null
 
@@ -40,15 +40,15 @@ describe 'origin middleware', ->
     origin_middleware req, res, next
 
     expect originHeader
-      .toBe host
+      .toBe origin
 
 
   it 'denies others', ->
-    host = 'arbitrary.url'
+    origin = 'arbitrary.url'
 
     req = 
       headers:
-        host: host
+        origin: origin
 
     originHeader = undefined
 

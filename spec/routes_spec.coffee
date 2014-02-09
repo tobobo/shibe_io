@@ -11,7 +11,7 @@ describe 'router', ->
       requestHost = 'http://www.shibe.io'
       request.get host,
         headers:
-          host: requestHost
+          origin: requestHost
       , (error, response, body) ->
 
         expect response.statusCode
@@ -29,7 +29,7 @@ describe 'router', ->
       requestHost = 'http://something.else'
       request.get host,
         headers:
-          host: requestHost
+          origin: requestHost
       , (error, response, body) ->
 
         expect response.statusCode
