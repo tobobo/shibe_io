@@ -5,7 +5,7 @@ app = express()
 app.use express.bodyParser()
 
 app.use (req, res, next) ->
-  res.header 'Access-Control-Allow-Origin', 'shibe.io'
+  res.header 'Access-Control-Allow-Origin', 'http://shibe.io'
   next()
 
 require("./routes.coffee")(app)
