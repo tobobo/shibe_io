@@ -8,7 +8,8 @@
     "express": "~3.4.8",
     "coffee": "0.0.1",
     "nodemon": "~1.0.14",
-    "request": "~2.33.0"
+    "request": "~2.33.0",
+    "coffee-script": "~1.7.1"
   },
   "devDependencies": {},
   "scripts": {
