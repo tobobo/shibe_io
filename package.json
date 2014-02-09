@@ -7,7 +7,9 @@
     "node": "~0.0.0",
     "express": "~3.4.8",
     "coffee": "0.0.1",
-    "nodemon": "~1.0.14"
+    "nodemon": "~1.0.14",
+    "dogeapi.js": "https://github.com/brutalhonesty/dogeapi.js/tarball/master",
+    "request": "~2.33.0"
   },
   "devDependencies": {},
   "scripts": {
