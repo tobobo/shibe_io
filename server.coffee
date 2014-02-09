@@ -6,4 +6,4 @@ app.use express.bodyParser()
 
 require("./routes.coffee")(app)
 
-app.listen 8888
+app.listen Number(process.env.PORT or 8888)
