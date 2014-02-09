@@ -9,6 +9,7 @@ module.exports = (app) ->
     stringData = JSON.stringify
       email: data
 
-    console.log stringData
+    for k, v of data
+      console.log "#{k} ---", v
     res.write stringData
     res.end()
