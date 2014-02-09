@@ -6,6 +6,9 @@ module.exports = (app) ->
 
   app.post '/incoming', (req, res, data) ->
     data = req.body
-    res.write JSON.stringify
+    stringData = JSON.stringify
       email: data
+
+    console.log stringData
+    res.write stringData
     res.end()
