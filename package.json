@@ -2,7 +2,7 @@
   "name": "shibe_io",
   "version": "0.0.0",
   "description": "",
-  "main": "src/server.coffee",
+  "main": "server.coffee",
   "dependencies": {
     "node": "~0.0.0",
     "express": "~3.4.8",

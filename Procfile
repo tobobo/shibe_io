@@ -1,1 +1,1 @@
-web: node target/server.js
+web: coffee target/server.js
