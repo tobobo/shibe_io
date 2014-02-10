@@ -1,6 +1,7 @@
 mongoose = require 'mongoose'
 passportLocalMongoose = require 'passport-local-mongoose'
 crypto = require 'crypto'
+mailer = require '../config/mailer'
 
 userSchema = new mongoose.Schema
   email:
@@ -12,16 +13,41 @@ userSchema = new mongoose.Schema
   createdAt: Date
   activationToken: String
   activationTokenCreatedAt: Date
+  activationEmailSent:
+    type: Boolean
+    default: false
   active: 
     type: Boolean
     default: false
+
+userSchema.methods.sendActivationEmail = (cb) ->
+  mailer.sendMail
+    from: mailer.default_from
+    to: this.email
+    subject: 'Activate your Shibe.io Account'
+    body: "your token is #{this.activationToken}"
+  , (err, result) =>
+    if err?
+      if cb?
+        cb err, this
+    else
+      console.log "sent activation email to #{this.email}"
+      this.activationEmailSent = true
+      this.save (err, user) ->
+        if cb?
+          cb err, user
+
+userSchema.post 'save', (user) ->
+  unless user.activationEmailSent
+    user.sendActivationEmail()
+
 
 defaults =
   createdAt: ->
     new Date
 
   activationToken: ->
-    crypto.createHash('md5').update(Math.random.toString()).digest('hex')
+    crypto.createHash('md5').update(Math.random().toString()).digest('hex')
 
   activationTokenCreatedAt: ->
     new Date

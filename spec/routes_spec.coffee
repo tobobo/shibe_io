@@ -1,4 +1,6 @@
 request = require 'request'
+mongoose = require 'mongoose'
+User = require '../models/user'
 
 host = 'http://127.0.0.1:8888'
 
@@ -71,36 +73,82 @@ describe 'router', ->
 
   describe 'users', ->
 
-    # userData = 
-    #   email: "#{time}fdsfd@something.com"
-    #   password: 'somepass'
+    newUserId = null
 
-    # describe 'new', ->
+    userData = 
+      email: "#{time}fdsfd@something.com"
+    password = 'somepass'
 
-    #   it 'should create a new user', (done) ->
+    describe 'new', ->
 
-    #     request.post host + '/users/new',
-    #       form: userData
-    #     , (error, response, body) ->
+      it 'should create a new user', (done) ->
 
-    #       expect response.statusCode
-    #         .toBe 200
+        request.post host + '/users/new',
+          form: userData
+        , (error, response, body) ->
+          expect response.statusCode
+            .toBe 200
 
-    #       expect body.length
-    #         .toBeGreaterThan 0
+          newUserid = JSON.parse(body).user._id
 
-    #       done()
+          expect body.length
+            .toBeGreaterThan 0
 
-    # describe 'login', ->
+          done()
 
-    #   it 'should log a registered user in', (done) ->
-    #     request.post host + '/users/login',
-    #       form: userData
-    #     , (error, response, body) ->
-    #       expect response.statusCode
-    #         .toBe 200
+    describe 'activate', ->
 
-    #       expect body.length
-    #         .toBeGreaterThan 0
+      it 'should not activate an inactive user without a token', (done) ->
+        request.post host + '/users/activate',
+          form:
+            email: userData.email
+            password: password
+        , (error, response, body) ->
+          expect response.statusCode
+            .toBe 422
+          done()
 
-    #       done()
+      it 'should not activate an inactive user without a password', (done) ->
+        User.find
+          email: userData.email
+        , (err, user) ->
+          request.post host + '/users/activate',
+            form:
+              email: userData.email
+              activationToken: user[0].activationToken
+          , (error, response, body) ->
+            expect response.statusCode
+              .toBe 422
+            done()
+
+      it 'should activate an inactive user', (done) ->
+        User.find
+          email: userData.email
+        , (err, user) ->
+          request.post host + '/users/activate',
+            form:
+              email: userData.email
+              password: password
+              activationToken: user[0].activationToken
+          , (error, response, body) ->
+            expect response.statusCode
+              .toBe 200
+            expect JSON.parse(body).user.active
+              .toBe true
+            done()
+
+    describe 'login', ->
+
+      it 'should log a registered user in', (done) ->
+        request.post host + '/users/login',
+          form:
+            email: userData.email
+            password: password
+        , (error, response, body) ->
+          expect response.statusCode
+            .toBe 200
+
+          expect body.length
+            .toBeGreaterThan 0
+
+          done()

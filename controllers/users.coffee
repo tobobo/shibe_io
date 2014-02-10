@@ -26,23 +26,36 @@ module.exports =
         res.end()
 
 
-  # new: (req, res, data) ->
-  #   User.register 
-  #     email: req.body.email
-  #   , req.body.password, (err, user) ->
+  activate: (req, res, data) ->
+    User.find
+      email: req.body.email
+      activationToken: req.body.activationToken
+      active: false
+    , (error, users) ->
+      if users.length > 0
+        users[0].setPassword req.body.password, (err, user) ->
+          if err?
+            res.statusCode = 422
+            res.write JSON.stringify
+              meta:
+                error: err
+            res.end()
+          else
+            user.active = true
+            user.activationEmailSent = true
+            user.save (err, user) ->
+              res.write user.serialize
+                meta:
+                  success: 'Account activated'
+              res.end()
 
-  #     if err
-  #       res.statusCode = 403
-  #       res.write JSON.stringify
-  #         meta: 
-  #           error: 'authentication error'
-  #     else
-  #       res.write user.serialize
-  #         meta:
-  #           success: 'user created'
+      else
+        res.statusCode = 422
+        res.write JSON.stringify
+          meta:
+            error: 'Account error'
+        res.end()
 
-      
-  #     res.end()
 
   login: (req, res) ->
     User.authenticate() req.body.email, req.body.password, (err, user) ->
