@@ -26,7 +26,7 @@ req.logIn = (user, res, options, done) ->
   newCallback = (err) ->
     unless err?
       console.log res
-      res.cookie 'shibeuid', user._id, 
+      res.cookie 'shibe', user._id, 
         maxAge: 3600000
     if done
       done.apply arguments
