@@ -67,3 +67,17 @@ describe 'router', ->
           .toBeGreaterThan 0
 
         done()
+
+  describe 'users', ->
+
+    describe 'new', ->
+
+      it 'should create a new user', (done) ->
+
+        request.post host + '/users/new',
+          form:
+            email: "#{(new Date).getTime()}@something.com"
+            password: 'somepass'
+        , (error, response, body) ->
+          console.log 'error:', error, 'response:', response, 'body:', body
+          done()

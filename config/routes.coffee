@@ -1,4 +1,5 @@
 incoming = require "../controllers/incoming.coffee"
+users = require "../controllers/users.coffee"
 
 module.exports = (app) ->
 
@@ -7,3 +8,5 @@ module.exports = (app) ->
     res.end()
 
   app.post '/incoming', incoming.index
+
+  app.post '/users/new', users.new

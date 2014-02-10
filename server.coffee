@@ -1,4 +1,5 @@
 express = require "express"
+db = require "./config/db"
 
 app = express()
 
