@@ -1,5 +1,7 @@
 mongoose = require 'mongoose'
+passportLocalMongoose = require 'passport-local-mongoose'
 
-userSchema = new mongoose.Schema
-  email: String
-  hashedPassword: String
+module.exports = mongoose.model 'User', new Schema()
+
+module.exports.plugin passportLocalMongoose,
+  usernameField: 'email'

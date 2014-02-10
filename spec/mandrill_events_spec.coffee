@@ -1,4 +1,4 @@
-mandrill_events = require('../mandrill_events')
+mandrill_events = require('../utils/mandrill_events')
 
 describe 'mandrill events module', ->
 
