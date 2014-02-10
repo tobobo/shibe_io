@@ -40,7 +40,8 @@ req.logIn = (user, res, options, done) ->
 passportLogout = req.logOut
 
 req.logOut = (res) ->
-  res.cookie 'shibe', null
+  res.cookie 'shibe', null,
+    domain: process.env.SHIBE_COOKIE_DOMAIN
   passportLogout.call this
 
 
