@@ -8,7 +8,6 @@ time = (new Date).getTime()
 
 describe 'router', ->
 
-
   describe 'index', ->
 
     it 'should have content', (done) ->

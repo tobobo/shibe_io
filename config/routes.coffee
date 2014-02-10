@@ -13,4 +13,5 @@ module.exports = (app) ->
   app.post '/users/new', users.new
   app.post '/users/activate', users.activate
   app.post '/users/login', users.login
+  app.delete '/users/logout', users.logout
 

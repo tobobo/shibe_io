@@ -76,3 +76,7 @@ module.exports =
         user.lastSignIn = new Date
         user.save()
 
+  logout: (req, res) ->
+    req.logOut res
+    res.end()
+

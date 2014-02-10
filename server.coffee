@@ -8,14 +8,31 @@ app = express()
 app.use express.static('public')
 app.use express.bodyParser()
 app.use express.methodOverride()
-app.use express.cookieParser()
+app.use express.cookieParser(process.env.SHIBE_SESSION_SECRET)
 app.use express.session
   secret: process.env.SHIBE_SESSION_SECRET
+  cookie:
+    maxAge: 60*60*1000
 
 app.use passport.initialize()
 app.use passport.session()
 
-app.use express.methodOverride()
+app.use (req, res, next) ->
+  if req.user
+    console.log 'reqest user id:', req.user._id
+  next()
+
+# app.use (req, res, next) ->
+#     console.log('-- session --');
+#     console.dir(req.session);
+#     console.log('-------------');
+#     console.log('-- cookies --');
+#     console.dir(req.cookies);
+#     console.log('-------------');
+#     console.log('-- signed cookies --');
+#     console.dir(req.signedCookies);
+#     console.log('-------------');
+#     next()
 
 app.use require('./utils/origin_middleware.coffee')
 

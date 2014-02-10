@@ -7,4 +7,5 @@ module.exports = (req, res, next) ->
   if originValid
     res.header 'Access-Control-Allow-Origin', req.headers.origin
     res.header 'Access-Control-Allow-Credentials', true
+    res.header 'Access-Control-Allow-Methods', 'POST, GET, DELETE, OPTIONS'
   next()

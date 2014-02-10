@@ -6,10 +6,14 @@ User = require '../models/user.coffee'
 passport.use new LocalStrategy(User.authenticate())
 
 passport.serializeUser (user, done) ->
+  console.log 'serialize user'
+  console.log user._id
   done null, user._id
 
 passport.deserializeUser (id, done) ->
+  console.log 'deserialize user'
   User.findById id, (err, user) ->
+    console.log user._id
     done err, user
 
 req = http.IncomingMessage.prototype;
@@ -25,13 +29,18 @@ req.logIn = (user, res, options, done) ->
 
   newCallback = (err) ->
     unless err?
-      console.log res
-      res.cookie 'shibe', user._id, 
+      res.cookie 'shibe', user._id,
         maxAge: 3600000
     if done
       done.apply arguments
 
   passportLogin.call this, user, options, newCallback
+
+passportLogout = req.logOut
+
+req.logOut = (res) ->
+  res.cookie 'shibe', null
+  passportLogout.call this
 
 
 module.exports = passport
