@@ -48,8 +48,6 @@ describe 'router', ->
     it 'should respond to email content', (done) ->
 
       request.post host + '/incoming',
-        headers:
-          host: 'whatever'
         form: 
           mandrill_events:
             JSON.stringify [

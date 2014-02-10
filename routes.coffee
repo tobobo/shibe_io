@@ -1,4 +1,5 @@
 mandrill_events = require "./mandrill_events.coffee"
+db = require './db.coffee'
 
 module.exports = (app) ->
 
