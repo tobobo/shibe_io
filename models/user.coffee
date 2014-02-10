@@ -21,17 +21,17 @@ userSchema = new mongoose.Schema
     default: false
 
 userSchema.methods.sendActivationEmail = (cb) ->
-  mailer.sendMail
+  mailData = 
     from: mailer.default_from
     to: this.email
     subject: 'Activate your Shibe.io Account'
-    body: "your token is #{this.activationToken}"
-  , (err, result) =>
+    body: "your token is #{process.env.SHIBE_FRONTEND_URL}/activate/#{this.activationToken}"
+  mailer.sendMail mailData, (err, result) =>
     if err?
       if cb?
         cb err, this
     else
-      console.log "sent activation email to #{this.email}"
+      console.log "sent activation email", mailData
       this.activationEmailSent = true
       this.save (err, user) ->
         if cb?
