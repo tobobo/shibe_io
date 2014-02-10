@@ -2,21 +2,47 @@ User = require '../models/user'
 
 module.exports =
   new: (req, res, data) ->
-
-    User.register 
+    user = new User
       email: req.body.email
-    , req.body.password, (err, user) ->
-      if err
-        meta = 
-          error: err
+    user.save (err, user) ->
+      if err?
+        res.statusCode = 422
+        User.find
+          email: req.body.email.trim().toLowerCase()
+        , (err, users) ->
+          if users.length > 0
+            res.write users[0].serialize
+              error: 'Registration error'
+          else
+            res.write JSON.stringify
+              meta:
+                error: 'Registration error'
+          res.end()
       else
-        meta =
-          success: 'user created'
+        res.write user.serialize
+          meta:
+            success: 'User created with activation token.'
+
+        res.end()
+
+
+  # new: (req, res, data) ->
+  #   User.register 
+  #     email: req.body.email
+  #   , req.body.password, (err, user) ->
+
+  #     if err
+  #       res.statusCode = 403
+  #       res.write JSON.stringify
+  #         meta: 
+  #           error: 'authentication error'
+  #     else
+  #       res.write user.serialize
+  #         meta:
+  #           success: 'user created'
+
       
-      res.write user.serialize
-        meta: meta
-    
-      res.end()
+  #     res.end()
 
   login: (req, res) ->
     User.authenticate() req.body.email, req.body.password, (err, user) ->

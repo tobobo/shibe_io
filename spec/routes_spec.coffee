@@ -71,36 +71,36 @@ describe 'router', ->
 
   describe 'users', ->
 
-    userData = 
-      email: "#{time}fdsfd@something.com"
-      password: 'somepass'
+    # userData = 
+    #   email: "#{time}fdsfd@something.com"
+    #   password: 'somepass'
 
-    describe 'new', ->
+    # describe 'new', ->
 
-      it 'should create a new user', (done) ->
+    #   it 'should create a new user', (done) ->
 
-        request.post host + '/users/new',
-          form: userData
-        , (error, response, body) ->
+    #     request.post host + '/users/new',
+    #       form: userData
+    #     , (error, response, body) ->
 
-          expect response.statusCode
-            .toBe 200
+    #       expect response.statusCode
+    #         .toBe 200
 
-          expect body.length
-            .toBeGreaterThan 0
+    #       expect body.length
+    #         .toBeGreaterThan 0
 
-          done()
+    #       done()
 
-    describe 'login', ->
+    # describe 'login', ->
 
-      it 'should log a registered user in', (done) ->
-        request.post host + '/users/login',
-          form: userData
-        , (error, response, body) ->
-          expect response.statusCode
-            .toBe 200
+    #   it 'should log a registered user in', (done) ->
+    #     request.post host + '/users/login',
+    #       form: userData
+    #     , (error, response, body) ->
+    #       expect response.statusCode
+    #         .toBe 200
 
-          expect body.length
-            .toBeGreaterThan 0
+    #       expect body.length
+    #         .toBeGreaterThan 0
 
-          done()
+    #       done()
