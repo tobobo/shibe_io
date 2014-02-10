@@ -2,6 +2,8 @@ request = require 'request'
 
 host = 'http://127.0.0.1:8888'
 
+time = (new Date).getTime()
+
 describe 'router', ->
 
 
@@ -69,16 +71,32 @@ describe 'router', ->
 
   describe 'users', ->
 
+    userData = 
+      email: "#{time}fdsfd@something.com"
+      password: 'somepass'
+
     describe 'new', ->
 
       it 'should create a new user', (done) ->
 
         request.post host + '/users/new',
-          form:
-            email: "#{(new Date).getTime()}fdsfd@something.com"
-            password: 'somepass'
+          form: userData
         , (error, response, body) ->
 
+          expect response.statusCode
+            .toBe 200
+
+          expect body.length
+            .toBeGreaterThan 0
+
+          done()
+
+    describe 'login', ->
+
+      it 'should log a registered user in', (done) ->
+        request.post host + '/users/login',
+          form: userData
+        , (error, response, body) ->
           expect response.statusCode
             .toBe 200
 

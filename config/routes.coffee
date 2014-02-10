@@ -1,5 +1,6 @@
 incoming = require "../controllers/incoming.coffee"
 users = require "../controllers/users.coffee"
+passport = require '../config/passport.coffee'
 
 module.exports = (app) ->
 
@@ -10,3 +11,5 @@ module.exports = (app) ->
   app.post '/incoming', incoming.index
 
   app.post '/users/new', users.new
+
+  app.post '/users/login', users.login

@@ -4,4 +4,5 @@ User = require '../models/user.coffee'
 
 module.exports.use new LocalStrategy(User.authenticate())
 
-module.exports.serializeUser User.serializerUser()
+module.exports.serializeUser User.serializeUser()
+module.exports.deserializeUser User.deserializeUser()
