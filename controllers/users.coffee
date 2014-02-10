@@ -7,8 +7,12 @@ module.exports =
     user.save (err, user) ->
       if err?
         res.statusCode = 422
+        if req.body.email?
+          email = req.body.email.trim().toLowerCase()
+        else
+          email = null
         User.find
-          email: req.body.email.trim().toLowerCase()
+          email: email
         , (err, users) ->
           if users.length > 0
             res.write users[0].serialize
