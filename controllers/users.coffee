@@ -45,13 +45,16 @@ module.exports =
                 error: err
             res.end()
           else
-            user.active = true
-            user.activationEmailSent = true
-            user.save (err, user) ->
-              res.write user.serialize
-                meta:
-                  success: 'Account activated'
-              res.end()
+            req.logIn user, res, (err) ->
+              user.active = true
+              user.activationEmailSent = true
+              user.lastSignIn = new Date
+              user.save()
+              user.save (err, user) ->
+                res.write user.serialize
+                  meta:
+                    success: 'Account activated'
+                res.end()
 
       else
         res.statusCode = 422
