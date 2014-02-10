@@ -13,6 +13,7 @@ userSchema = new mongoose.Schema
   createdAt: Date
   activationToken: String
   activationTokenCreatedAt: Date
+  lastSignIn: Date
   activationEmailSent:
     type: Boolean
     default: false
