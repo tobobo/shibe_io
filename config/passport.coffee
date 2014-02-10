@@ -31,6 +31,7 @@ req.logIn = (user, res, options, done) ->
     unless err?
       res.cookie 'shibe', user._id,
         maxAge: 3600000
+        domain: process.env.SHIBE_COOKIE_DOMAIN
     if done
       done.apply arguments
 

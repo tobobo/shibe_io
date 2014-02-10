@@ -13,6 +13,7 @@ app.use express.session
   secret: process.env.SHIBE_SESSION_SECRET
   cookie:
     maxAge: 60*60*1000
+    domain: process.env.SHIBE_COOKIE_DOMAIN
 
 app.use passport.initialize()
 app.use passport.session()
