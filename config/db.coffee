@@ -1,17 +1,13 @@
 mongoose = require('mongoose')
 db_url = process.env.SHIBE_DB_URL
 
-(connect = ->
-  mongoose.connect(db_url)
-)()
+module.exports.mongoose = mongoose
 
-module.exports = connection = mongoose.connection
+module.exports.connect = connect = ->
+  mongoose.connect db_url
 
-connection.on 'error', (err) ->
-  console.log err
+mongoose.connection.on 'error', (err) ->
+  console.log 'mongo error', err
 
-connection.on 'open', ->
-  console.log "connection to #{db_url} opened"
-
-connection.on 'disconnected', ->
+mongoose.connection.on 'disconnected', ->
   connect()

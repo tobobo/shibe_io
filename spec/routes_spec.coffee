@@ -58,12 +58,11 @@ describe 'router', ->
                 subject: '200 doge'
             ]
       , (error, response, body) ->
-        bodyText = body
 
         expect response.statusCode
           .toBe 200
 
-        expect bodyText.length
+        expect body.length
           .toBeGreaterThan 0
 
         done()
@@ -76,8 +75,14 @@ describe 'router', ->
 
         request.post host + '/users/new',
           form:
-            email: "#{(new Date).getTime()}@something.com"
+            email: "#{(new Date).getTime()}fdsfd@something.com"
             password: 'somepass'
         , (error, response, body) ->
-          console.log 'error:', error, 'response:', response, 'body:', body
+
+          expect response.statusCode
+            .toBe 200
+
+          expect body.length
+            .toBeGreaterThan 0
+
           done()
