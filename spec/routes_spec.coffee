@@ -49,22 +49,31 @@ describe 'router', ->
   describe 'inbox', ->
 
     it 'should respond to email content', (done) ->
+      from = 'person@a.com'
+      to = 'person@b.com'
+      amount = 200
+      events = [
+        ts: (new Date).getTime()
+        msg:
+          from_email: from,
+          to: ["Person B <#{to}>", 'Good Shibe <good@shibe.io>']
+          subject: "#{amount} doge"
+      ]
 
       request.post host + '/incoming',
         form: 
-          mandrill_events:
-            JSON.stringify [
-              ts: (new Date).getTime()
-              msg:
-                from_email: 'person@a.com',
-                to: ['Person B <person@b.com>', 'Good Shibe <good@shibe.io>']
-                subject: '200 doge'
-            ]
+          mandrill_events: JSON.stringify events
       , (error, response, body) ->
 
         expect response.statusCode
           .toBe 200
-
+        bodyObj = JSON.parse body
+        expect bodyObj.transactions[0].from
+          .toBe from
+        expect bodyObj.transactions[0].to
+          .toBe to
+        expect bodyObj.transactions[0].amount
+          .toBe amount
         expect body.length
           .toBeGreaterThan 0
 
