@@ -4,7 +4,7 @@ module.exports =
     recipients = []
 
     for recipient in to
-      console.log 'TYPEOF RECIPIENT', typeof recipient
+      console.log 'TYPEOF RECIPIENT', typeof recipient, recipient
       if /<[^>]*>/.test recipient
         address = recipient.match(/<([^>]*)>/)[1]
       unless /[^@]@shibe.io/.test address
