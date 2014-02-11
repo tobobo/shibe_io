@@ -22,7 +22,6 @@ module.exports =
 
       for recipient in module.exports.getRecipients m_event.msg.to
         transactions.push
-          time: m_event.ts
           amount: module.exports.getValue m_event.msg.subject
           to: recipient
           from: m_event.msg.from_email
