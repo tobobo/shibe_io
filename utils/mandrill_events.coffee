@@ -12,7 +12,7 @@ module.exports =
       console.log recipient
       unless /[^@]@shibe.io/.test recipient
         recipients.push recipient
-        
+
     console.log 'recipients', recipients
     recipients
 
@@ -26,10 +26,13 @@ module.exports =
 
     m_events.forEach (m_event) ->
 
+      amount = module.exports.getValue m_event.msg.subject
+
       for recipient in module.exports.getRecipients m_event.msg.to
-        transactions.push
-          amount: module.exports.getValue m_event.msg.subject
-          to: recipient
-          from: m_event.msg.from_email
+        if amount > 0 and recipient
+          transactions.push
+            amount: amount
+            to: recipient
+            from: m_event.msg.from_email
 
     transactions
