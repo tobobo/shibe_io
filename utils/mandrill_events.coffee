@@ -4,16 +4,12 @@ module.exports =
     recipients = []
 
     for recipient in to
-      console.log recipient
       recipient = recipient[0]
-      console.log recipient
       if /<[^>]*>/.test recipient
         recipient = recipient.match(/<([^>]*)>/)[1]
-      console.log recipient
       unless /[^@]@shibe.io/.test recipient
         recipients.push recipient
 
-    console.log 'recipients', recipients
     recipients
 
   getValue: (subject) ->
