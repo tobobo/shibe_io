@@ -24,17 +24,17 @@ userSchema = new mongoose.Schema
 userSchema.methods.sendActivationEmail = (cb) ->
   mailData = 
     from: mailer.default_from
-    to: this.email
+    to: @email
     subject: 'Activate your Shibe.io Account'
-    body: "your token is #{process.env.SHIBE_FRONTEND_URL}/activate/#{this.activationToken}"
+    body: "your token is #{process.env.SHIBE_FRONTEND_URL}/activate/#{@activationToken}"
   mailer.sendMail mailData, (err, result) =>
     if err?
       if cb?
         cb err, this
     else
       console.log "sent activation email", mailData
-      this.activationEmailSent = true
-      this.save (err, user) ->
+      @activationEmailSent = true
+      @save (err, user) ->
         if cb?
           cb err, user
 
@@ -62,9 +62,9 @@ userSchema.plugin passportLocalMongoose,
 userSchema.methods.serialize = (meta) ->
   JSON.stringify
     user:
-      _id: this._id
-      email: this.email
-      active: this.active
+      _id: @_id
+      email: @email
+      active: @active
     meta:
       meta
 
