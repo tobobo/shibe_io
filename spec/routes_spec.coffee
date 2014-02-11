@@ -56,7 +56,7 @@ describe 'router', ->
         ts: (new Date).getTime()
         msg:
           from_email: from,
-          to: ["Person B <#{to}>", 'Good Shibe <good@shibe.io>']
+          to: [["Person B <#{to}>", null], ['Good Shibe <good@shibe.io>', null]]
           subject: "#{amount} doge"
       ]
 

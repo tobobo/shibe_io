@@ -7,7 +7,7 @@ describe 'mandrill events module', ->
 
     it 'should filter out an email from shibe.io', ->
 
-      input = ['Someone <someone@person.com>', 'Good shibe <good@shibe.io>', 'Another person <someone@else.com>']
+      input = [['Someone <someone@person.com>', null],  ['Good shibe <good@shibe.io>', null], ['Another person <someone@else.com>', null]]
 
       recipients = mandrill_events.getRecipients input
 
