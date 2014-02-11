@@ -72,12 +72,16 @@ module.exports =
       else
         meta = 
           success: 'Authenticated'
-
-      req.logIn user, res, (err) ->
-        res.write user.serialize(meta)
+      if user?
+        req.logIn user, res, (err) ->
+          res.write user.serialize(meta)
+          res.end()
+          user.lastSignIn = new Date
+          user.save()
+      else
+        res.write JSON.stringify
+          meta: meta
         res.end()
-        user.lastSignIn = new Date
-        user.save()
 
   logout: (req, res) ->
     req.logOut res
