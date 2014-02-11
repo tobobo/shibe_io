@@ -43,14 +43,14 @@ transactionSchema.post 'save', (transaction) ->
 transactionSchema.methods.sendEmails = ->
   senderMailData =
     from: mailer.default_from
-    to: this.from
-    subject: "You sent #{this.amount} DOGE to #{@from}"
+    to: @from
+    subject: "You sent #{this.amount} DOGE to #{@to}"
     body: "You are so generous. Pat yourself on the back."
 
   receiverMailData =
     from: mailer.default_from
     to: @to
-    subject: "#{@to} has sent you #{@amount} DOGE"
+    subject: "#{@from} has sent you #{@amount} DOGE"
     body: "What a joyous occasion!"
 
   emailPromises = [senderMailData, receiverMailData].map (mailData) =>
