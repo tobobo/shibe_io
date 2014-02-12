@@ -51,14 +51,10 @@ userSchema.methods.sendActivationEmail = (cb) ->
           cb err, user
 
 userSchema.methods.createDepositAddress = ->
-  console.log 'inside create function'
   if @email?
-    console.log 'has email'
     addressLabel = "#{@email.replace(/\W/g, '_')}#{Math.floor(Math.random()*1000000)}"
-    console.log 'address label', addressLabel
     doge_api.getNewAddress addressLabel
     .then (address) =>
-      console.log 'got address', address
       new RSVP.Promise (resolve, reject) =>
         @depositAddress = address
         @save().then (err, user) ->
@@ -73,9 +69,7 @@ userSchema.methods.createDepositAddress = ->
 userSchema.post 'save', (user) ->
   unless user.activationEmailSent
     user.sendActivationEmail()
-  console.log 'post save'
   if user.active and not user.depositAddress?
-    console.log 'creating deposit address'
     user.createDepositAddress()
 
 
