@@ -5,10 +5,6 @@ db = require '../config/db'
 doge_api = require '../config/doge_api'
 RSVP = require 'rsvp'
 
-RSVP.resolve = (result) ->
-    new RSVP.Promise (resolve, reject) -> 
-      resolve result
-
 db.connect()
 
 db.mongoose.connection.on 'open', ->
@@ -27,24 +23,9 @@ db.mongoose.connection.on 'open', ->
       process.exit(1)
 
     users.forEach (user) -> 
-      (->
-        if user.depositAddress?
-          RSVP.resolve user.depositAddress
-        else
-          user.createDepositAddress()
-      )().then (address) ->
-        doge_api.getReceivedByAddress address
-      .then (amount) ->
-        amount = parseFloat amount
-        console.log "#{user.email} has deposited #{amount}"
-        prev_amount = user.deposited
-        if amount > prev_amount
-          user.deposited = amount
-          user.save (err, user) ->
-            console.log "added #{amount - prev_amount} DOGE to #{user.email}"
-            exitIfDone()
-        else
-          exitIfDone()
+      console.log 'updating balance for', user.email
+      user.updateBalanceFromDeposits().then (deposited) ->
+        console.log "#{user.email} deposited #{deposited}"
+        exitIfDone()
       , (error) ->
-
         exitIfDone()

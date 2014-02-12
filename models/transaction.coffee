@@ -4,7 +4,7 @@ mailer = require '../config/mailer'
 RSVP = require 'rsvp'
 
 transactionSchema = new mongoose.Schema
-  _id: String
+  id: String
   amount:
     type: Number
     required: true
@@ -31,7 +31,7 @@ defaults =
   createdAt: ->
     new Date
 
-  _id: ->
+  id: ->
     crypto.createHash('md5').update(Math.random().toString()).digest('hex')
 
 for k, v of defaults
@@ -65,10 +65,10 @@ transactionSchema.methods.sendEmails = ->
     @announced = true
     @save()
   .catch (reason) =>
-    console.log "Error sending emails for transaction #{@_id}"
+    console.log "Error sending emails for transaction #{@id}"
 
 transactionSchema.methods.serializeToObj = ->
-  _id: @_id
+  id: @id
   from: @from
   to: @to
   senderId: @senderId
@@ -77,6 +77,7 @@ transactionSchema.methods.serializeToObj = ->
   announced: @announced
   createdAt: @createdAt
   subject: @subject
+  status: @status
 
 transactionSchema.methods.serialize = (meta) ->
   JSON.stringify
@@ -89,5 +90,11 @@ Transaction.serialize = (transactions, meta) ->
   JSON.stringify
     transactions: transactions.map (transaction) -> transaction.serializeToObj()
     meta: meta
+
+statuses = ['PENDING', 'COMPLETE', 'DEPOSIT']
+Transaction.STATUS = {}
+for i, v of statuses
+  Transaction.STATUS[i] = v
+  Transaction.STATUS[v] = i 
 
 module.exports = mongoose.model 'Transaction', transactionSchema
