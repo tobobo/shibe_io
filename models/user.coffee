@@ -11,6 +11,15 @@ userSchema = new mongoose.Schema
     trim: true
     lowercase: true
   createdAt: Date
+  balance:
+    type: Number
+    default: 0
+  deposited:
+    type: Number
+    default: 0
+  sent:
+    type: Number
+    default: 0
   activationToken: String
   activationTokenCreatedAt: Date
   lastSignIn: Date
