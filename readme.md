@@ -1,4 +1,4 @@
 Shibe.io
 ========
 
-Hello world
+A way to send dogecoins over email
