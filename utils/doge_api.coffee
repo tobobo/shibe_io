@@ -16,18 +16,21 @@ doge_api.requestDogeApi = (params) ->
       url: doge_api_base_url
       qs: params
     , (err, response, body) ->
-      body = body.toString()
-      if body in ["Unauthorized Shibe", "Invalid API Key"]
-        reject()
+      if body.toString() == ""
+        reject body
       else
-        resolve body
+        body = JSON.parse body
+        if body in ["Unauthorized Shibe", "Invalid API Key", "Must Withdraw At Least 5 Doge", ""]
+          reject body
+        else
+          resolve body
 
 doge_api.requestDogeChain = (query, address) ->
   new RSVP.Promise (resolve, reject) ->
     request.get "#{doge_chain_base_url}#{query}/#{address}", (err, response, body) ->
       body = body.toString()
       if body == "ERROR: address invalid"
-        reject()
+        reject body
       else
         resolve body
 
@@ -44,7 +47,7 @@ doge_api.withdraw = (amount, address) ->
   doge_api.requestDogeApi
     a: 'withdraw'
     amount: amount
-    address: address
+    payment_address: address
 
 doge_api.getReceivedByAddress = (address) ->
   doge_api.requestDogeChain 'getreceivedbyaddress', address
