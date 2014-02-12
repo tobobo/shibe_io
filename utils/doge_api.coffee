@@ -8,6 +8,7 @@ doge_chain_base_url = 'https://dogechain.info/chain/Dogecoin/q/'
 doge_api = {}
 
 doge_api.requestDogeApi = (params) ->
+  console.log 'requesting doge api'
   new RSVP.Promise (resolve, reject) ->
     unless doge_api.api_key?
       reject
@@ -39,6 +40,7 @@ doge_api.getBalance = ->
     a: 'get_balance'
 
 doge_api.getNewAddress = (label) ->
+  console.log 'get new address'
   doge_api.requestDogeApi
     a: 'get_new_address'
     address_label: label

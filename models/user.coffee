@@ -4,6 +4,8 @@ crypto = require 'crypto'
 mailer = require '../config/mailer'
 doge_api = require '../config/doge_api'
 
+RSVP = require 'rsvp'
+
 userSchema = new mongoose.Schema
   email:
     type: String
@@ -48,20 +50,32 @@ userSchema.methods.sendActivationEmail = (cb) ->
         if cb?
           cb err, user
 
-userSchema.methods.createDepositAddress = (cb) ->
-  addressLabel = "#{@.email.replace /\W/g, '_'}#{(new Date).getTime()}"
-  doge_api.getNewAddress addressLabel
-  .then (address) =>
-    @depositAddress = address
-    @save()
-    if cb? then cb address
+userSchema.methods.createDepositAddress = ->
+  console.log 'inside create function'
+  if @email?
+    console.log 'has email'
+    addressLabel = "#{@email.replace(/\W/g, '_')}#{Math.floor(Math.random()*1000000)}"
+    console.log 'address label', addressLabel
+    doge_api.getNewAddress addressLabel
+    .then (address) =>
+      console.log 'got address', address
+      new RSVP.Promise (resolve, reject) =>
+        @depositAddress = address
+        @save().then (err, user) ->
+          resolve user
+    , (error) =>
+      console.log 'Deposit address creation error'
+  else
+    new RSVP.Promise (resolve, reject) ->
+      reject "No email address"
 
 
 userSchema.post 'save', (user) ->
   unless user.activationEmailSent
     user.sendActivationEmail()
-
+  console.log 'post save'
   if user.active and not user.depositAddress?
+    console.log 'creating deposit address'
     user.createDepositAddress()
 
 

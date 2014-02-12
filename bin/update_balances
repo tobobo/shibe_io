@@ -1,0 +1,50 @@
+#!/usr/bin/env coffee
+
+User = require '../models/user'
+db = require '../config/db'
+doge_api = require '../config/doge_api'
+RSVP = require 'rsvp'
+
+db.connect()
+
+db.mongoose.connection.on 'open', ->
+  console.log "connection open"
+
+  User.find (err, users) ->
+    console.log "users found"
+    totalUsers = users.length
+    usersChecked = 0
+
+    exitIfDone = ->
+      if ++usersChecked == totalUsers
+        process.exit(1)
+
+    if users.length == 0
+      process.exit(1)
+
+    users.forEach (user) ->
+      new RSVP.Promise (resolve, reject) ->
+        if user.depositAddress?
+          resolve user.depositAddress
+        else
+          user.createDepositAddress().then (address) ->
+            resolve address
+          , (error) ->
+            reject error
+
+      .then (address) ->
+        doge_api.getReceivedByAddress address
+      .then (amount) ->
+        amount = parseFloat amount
+        console.log "#{user.email} has deposited #{amount}"
+        prev_amount = user.deposited
+        if amount > prev_amount
+          user.deposited = amount
+          user.save (err, user) ->
+            console.log "added #{amount - prev_amount} DOGE to #{user.email}"
+            exitIfDone()
+        else
+          exitIfDone()
+      , (error) ->
+
+        exitIfDone()
