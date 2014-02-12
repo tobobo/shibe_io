@@ -9,5 +9,5 @@ mailer = nodemailer.createTransport 'SMTP',
     user: process.env.SHIBE_MANDRILL_USERNAME
     pass: process.env.SHIBE_MANDRILL_PASSWORD
 
-mailer.default_from = 'Shibe.io <good@shibe.io>'
+mailer.default_from = 'shibe.io <good@shibe.io>'
 module.exports = mailer

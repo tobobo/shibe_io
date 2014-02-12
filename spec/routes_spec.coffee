@@ -52,12 +52,13 @@ describe 'router', ->
       from = 'person@a.com'
       to = 'person@b.com'
       amount = 200
+      subject = "#{amount} doge"
       events = [
         ts: (new Date).getTime()
         msg:
           from_email: from,
           to: [["Person B <#{to}>", null], ['Good Shibe <good@shibe.io>', null]]
-          subject: "#{amount} doge"
+          subject: subject
       ]
 
       request.post host + '/incoming',
@@ -74,6 +75,8 @@ describe 'router', ->
           .toBe to
         expect bodyObj.transactions[0].amount
           .toBe amount
+        expect bodyObj.transactions[0].subject
+          .toBe subject
         expect body.length
           .toBeGreaterThan 0
 

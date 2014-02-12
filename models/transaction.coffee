@@ -11,6 +11,7 @@ transactionSchema = new mongoose.Schema
   createdAt: Date
   senderId: String
   receiverId: String
+  subject: String
   announced:
     type: Boolean
     default: false
@@ -44,14 +45,14 @@ transactionSchema.methods.sendEmails = ->
   senderMailData =
     from: mailer.default_from
     to: @from
-    subject: "You sent #{this.amount} DOGE to #{@to}"
-    body: "You are so generous. Pat yourself on the back."
+    subject: "Re: #{@subject}"
+    body: "You sent #{@amount} DOGE to #{@to}. You are so generous. Pat yourself on the back."
 
   receiverMailData =
     from: mailer.default_from
     to: @to
-    subject: "#{@from} has sent you #{@amount} DOGE"
-    body: "What a joyous occasion!"
+    subject: "Re: #{@subject}"
+    body: "#{@from} has sent you #{@amount} DOGE. What a joyous occasion!"
 
   emailPromises = [senderMailData, receiverMailData].map (mailData) =>
     new RSVP.Promise (resolve, reject) =>
@@ -75,6 +76,7 @@ transactionSchema.methods.serializeToObj = ->
   amount: @amount
   announced: @announced
   createdAt: @createdAt
+  subject: @subject
 
 transactionSchema.methods.serialize = (meta) ->
   JSON.stringify

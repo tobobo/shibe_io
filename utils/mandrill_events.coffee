@@ -30,5 +30,6 @@ module.exports =
             amount: amount
             to: recipient
             from: m_event.msg.from_email
+            subject: m_event.msg.subject
 
     transactions
