@@ -22,17 +22,14 @@ db.mongoose.connection.on 'open', ->
     if users.length == 0
       process.exit(1)
 
-    users.forEach (user) ->
-      new RSVP.Promise (resolve, reject) ->
+    users.forEach (user) -> 
+      (->
         if user.depositAddress?
-          resolve user.depositAddress
+          new RSVP.Promise (resolve, reject) ->
+            resolve user.depositAddress
         else
-          user.createDepositAddress().then (address) ->
-            resolve address
-          , (error) ->
-            reject error
-
-      .then (address) ->
+          user.createDepositAddress()
+      )().then (address) ->
         doge_api.getReceivedByAddress address
       .then (amount) ->
         amount = parseFloat amount
