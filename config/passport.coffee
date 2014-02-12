@@ -6,14 +6,10 @@ User = require '../models/user.coffee'
 passport.use new LocalStrategy(User.authenticate())
 
 passport.serializeUser (user, done) ->
-  console.log 'serialize user'
-  console.log user._id
   done null, user._id
 
 passport.deserializeUser (id, done) ->
-  console.log 'deserialize user'
   User.findById id, (err, user) ->
-    console.log user._id
     done err, user
 
 req = http.IncomingMessage.prototype;
