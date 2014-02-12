@@ -1,3 +1,4 @@
+require 'newrelic'
 express = require "express"
 passport = require 'passport'
 db = require "./config/db"
