@@ -2,6 +2,7 @@ mongoose = require 'mongoose'
 passportLocalMongoose = require 'passport-local-mongoose'
 crypto = require 'crypto'
 mailer = require '../config/mailer'
+doge_api = require '../config/doge_api'
 
 userSchema = new mongoose.Schema
   email:
@@ -20,6 +21,7 @@ userSchema = new mongoose.Schema
   sent:
     type: Number
     default: 0
+  depositAddress: String
   activationToken: String
   activationTokenCreatedAt: Date
   lastSignIn: Date
@@ -41,15 +43,26 @@ userSchema.methods.sendActivationEmail = (cb) ->
       if cb?
         cb err, this
     else
-      console.log "sent activation email", mailData
       @activationEmailSent = true
       @save (err, user) ->
         if cb?
           cb err, user
 
+userSchema.methods.createDepositAddress = (cb) ->
+  addressLabel = "#{@.email.replace /\W/g, '_'}#{(new Date).getTime()}"
+  doge_api.getNewAddress addressLabel
+  .then (address) =>
+    @depositAddress = address
+    @save()
+    if cb? then cb address
+
+
 userSchema.post 'save', (user) ->
   unless user.activationEmailSent
     user.sendActivationEmail()
+
+  if user.active and not user.depositAddress?
+    user.createDepositAddress()
 
 
 defaults =
