@@ -5,6 +5,10 @@ db = require '../config/db'
 doge_api = require '../config/doge_api'
 RSVP = require 'rsvp'
 
+RSVP.resolve = (result) ->
+    new RSVP.Promise (resolve, reject) -> 
+      resolve result
+
 db.connect()
 
 db.mongoose.connection.on 'open', ->
@@ -25,8 +29,7 @@ db.mongoose.connection.on 'open', ->
     users.forEach (user) -> 
       (->
         if user.depositAddress?
-          new RSVP.Promise (resolve, reject) ->
-            resolve user.depositAddress
+          RSVP.resolve user.depositAddress
         else
           user.createDepositAddress()
       )().then (address) ->
