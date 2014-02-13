@@ -15,8 +15,8 @@ transactionSchema = new mongoose.Schema
   subject: String
   confirmationCode: String
   confirmationCodeCreatedAt: Date
-  receptionCode: String
-  receptionCodeCreatedAt: Date
+  acceptanceCode: String
+  acceptanceCodeCreatedAt: Date
   from: 
     type: String
     trim: true
@@ -26,6 +26,12 @@ transactionSchema = new mongoose.Schema
     trim: true
     lowercase: true
   status:
+    type: Number
+    default: 0
+  acceptance:
+    type: Number
+    default: 0
+  confirmation:
     type: Number
     default: 0
 
@@ -39,10 +45,10 @@ defaults =
   confirmationCode: ->
     crypto.createHash('md5').update(Math.random().toString()).digest('hex')
 
-  receptionCodeCreatedAt: ->
+  acceptanceCodeCreatedAt: ->
     new Date
 
-  receptionCode: ->
+  acceptanceCode: ->
     crypto.createHash('md5').update(Math.random().toString()).digest('hex')
 
   id: ->
@@ -70,13 +76,17 @@ transactionSchema.methods.assignUsers = ->
         if users.length? and users[0]?
           resolve users[0]
         else
+          isNew = true
           user = new User
             email: address
           user.save (err, user) =>
+            user.isNew = true
             resolve user
 
   RSVP.all(userPromises).then (users) =>
     new RSVP.Promise (resolve, reject) =>
+      if users[1].isNew
+        @acceptance = Transaction.ACCEPTANCE.PENDING
       @senderId = users[0].id
       @receiverId = users[1].id
       @save (err, transaction) ->
@@ -152,10 +162,15 @@ Transaction.serialize = (transactions, meta) ->
     transactions: transactions.map (transaction) -> transaction.serializeToObj()
     meta: meta
 
-statuses = ['PENDING', 'ANNOUNCED', 'CONFIRMED', 'COMPLETE', 'DEPOSIT']
-Transaction.STATUS = {}
-for i, v of statuses
-  Transaction.STATUS[i] = v
-  Transaction.STATUS[v] = i 
+constants =
+  STATUS: ['PENDING', 'ANNOUNCED', 'DEPOSIT']
+  CONFIRMATION: ['PENDING', 'ACCEPTED']
+  ACCEPTANCE: ['PENDING', 'ACCEPTED']
+
+for c, a of constants
+  Transaction[c] = {}
+  for i, v of a
+    Transaction[c][i] = v
+    Transaction[c][v] = i 
 
 module.exports = mongoose.model 'Transaction', transactionSchema

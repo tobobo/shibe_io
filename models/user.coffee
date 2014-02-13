@@ -31,6 +31,9 @@ userSchema = new mongoose.Schema
   activationToken: String
   activationTokenCreatedAt: Date
   lastSignIn: Date
+  transactionsAccepted:
+    type: Boolean
+    default: false
   activationEmailSent:
     type: Boolean
     default: false
@@ -126,12 +129,37 @@ userSchema.methods.createDepositAddress = ->
     new RSVP.Promise (resolve, reject) ->
       reject "No email address"
 
+userSchema.methods.acceptTransactions = ->
+  new RSVP.Promise (resolve, reject) ->
+    Transaction.find
+      receiverId: @id
+      acceptance: Transaction.ACCEPTANCE.PENDING
+    , (err, transactions) ->
+      resolve transactions
+  .then (transactions) =>
+    if transactions.length > 0
+      transactionPromises = transactions.map (transaction) ->
+        new RSVP.Promise (resolve, reject) ->
+          transaction.acceptance = Transaction.ACCEPTANCE.ACCEPTED
+          transaction.save (err, transaction) ->
+            resolve transaction
+      RSVP.all transactionPromises
+    else
+      RSVP.resolve transactions
+  .then (transactions) =>
+    new RSVP.Promise (resolve, reject) =>
+      @transactionsAccepted = true
+      @save (err, user) ->
+        resolve transactions
+
 
 userSchema.post 'save', (user) ->
   unless user.activationEmailSent
     user.sendActivationEmail()
   if user.active and not user.depositAddress?
     user.createDepositAddress()
+  if user.active and not user.transactionsAccepted
+    user.acceptTransactions()
 
 
 defaults =
