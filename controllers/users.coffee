@@ -66,22 +66,21 @@ module.exports =
 
   login: (req, res) ->
     User.authenticate() req.body.email, req.body.password, (err, user) ->
-      if err?
-        meta =
-          error: 'Invalid login'
+      if user == false
+        res.statusCode = 403
+        res.write JSON.stringify
+          user: null
+          meta:
+            error: 'Invalid login'
+        res.end()
       else
-        meta = 
-          success: 'Authenticated'
-      if user?
         req.logIn user, res, (err) ->
-          res.write user.serialize(meta)
+          res.write user.serialize
+            meta: 
+              success: 'Authenticated'
           res.end()
           user.lastSignIn = new Date
           user.save()
-      else
-        res.write JSON.stringify
-          meta: meta
-        res.end()
 
   logout: (req, res) ->
     req.logOut res
