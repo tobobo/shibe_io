@@ -81,8 +81,14 @@ module.exports =
               reject "Please enter a username and password"
           .then (user) ->
             if req.body.transaction.confirmationCode?
+              if parseInt(req.body.transaction.confirmation) == parseInt(Transaction.CONFIRMATION.ACCEPTED)
+                if user.balance < transaction.amount
+                  transaction.confirmation = Transaction.CONFIRMATION.INSUFFICIENT_FUNDS
+                else
+                  transaction.confirmation = Transaction.CONFIRMATION.ACCEPTED
               transaction.confirmation = req.body.transaction.confirmation
               transaction.senderId = user.id
+
             else if req.body.acceptanceCode?
               transaction.acceptance = req.body.transaction.acceptance
               transaction.receiverId = user.id

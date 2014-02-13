@@ -173,7 +173,7 @@ Transaction.serialize = (transactions, meta, additionalFields) ->
 
 constants =
   STATUS: ['PENDING', 'ANNOUNCED', 'DEPOSIT']
-  CONFIRMATION: ['PENDING', 'ACCEPTED']
+  CONFIRMATION: ['PENDING', 'ACCEPTED', 'INSUFFICIENT_FUNDS']
   ACCEPTANCE: ['PENDING', 'ACCEPTED']
 
 for c, a of constants
