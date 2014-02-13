@@ -2,9 +2,9 @@ Transaction = require '../models/transaction'
 
 module.exports =
   index: (req, res) ->
-    if req.query.confirmation_code
+    if req.query.confirmationCode
       query =
-        confirmation_code: req.query.confirmation_code
+        confirmationCode: req.query.confirmationCode
     if query
       Transaction.find query, (err, transactions) =>
         res.write Transaction.serialize transactions
