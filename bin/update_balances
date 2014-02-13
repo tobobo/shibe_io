@@ -9,7 +9,7 @@ db.connect()
 
 db.mongoose.connection.on 'open', ->
   console.log "connection open"
-
+  start = (new Date).getTime()
   User.find (err, users) ->
     console.log "users found"
     totalUsers = users.length
@@ -17,6 +17,8 @@ db.mongoose.connection.on 'open', ->
 
     exitIfDone = ->
       if ++usersChecked == totalUsers
+        end = (new Date).getTime()
+        console.log "updating balances took #{(end-start)/1000} seconds"
         process.exit(1)
 
     if users.length == 0
