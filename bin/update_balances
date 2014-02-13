@@ -24,7 +24,7 @@ db.mongoose.connection.on 'open', ->
 
     users.forEach (user) -> 
       console.log 'updating balance for', user.email
-      user.updateBalanceFromDeposits().then (deposited) ->
+      user.checkDeposits().then (deposited) ->
         console.log "#{user.email} deposited #{deposited}"
         exitIfDone()
       , (error) ->

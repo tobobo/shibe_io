@@ -39,15 +39,12 @@ userSchema = new mongoose.Schema
     default: false
 
 userSchema.methods.updateBalanceFromDeposits = ->
-  console.log 'updating balance from deposits'
   new RSVP.Promise (resolve, reject) =>
     prev_deposited = @deposited
-    console.log 'finding transactions'
     Transaction.find
       receiverId: @id
       status: Transaction.STATUS.DEPOSIT
     , (err, transactions) =>
-      console.log 'found', transactions.length, 'transactions'
       if err?
         reject err
       else
@@ -74,7 +71,6 @@ userSchema.methods.checkDeposits = ->
     doge_api.getReceivedByAddress address
   .then (amount) =>
     amount = parseFloat amount
-    console.log "#{@email} has deposited #{amount}"
     prev_amount = @deposited
     new RSVP.Promise (resolve, reject) ->
       if amount > prev_amount

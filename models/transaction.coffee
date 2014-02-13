@@ -12,9 +12,6 @@ transactionSchema = new mongoose.Schema
   senderId: String
   receiverId: String
   subject: String
-  announced:
-    type: Boolean
-    default: false
   from: 
     type: String
     trim: true
@@ -38,34 +35,35 @@ for k, v of defaults
   transactionSchema.path(k).default v
 
 transactionSchema.post 'save', (transaction) ->
-  unless transaction.announced
+  if transaction.status == Transaction.STATUS.PENDING
     transaction.sendEmails()
 
 transactionSchema.methods.sendEmails = ->
-  senderMailData =
-    from: mailer.default_from
-    to: @from
-    subject: "Re: #{@subject}"
-    body: "You sent #{@amount} DOGE to #{@to}. You are so generous. Pat yourself on the back."
+  if @status == Transaction.STATUS.PENDING and @from? and @to?
+    senderMailData =
+      from: mailer.default_from
+      to: @from
+      subject: "Re: #{@subject}"
+      body: "You sent #{@amount} DOGE to #{@to}. You are so generous. Pat yourself on the back."
 
-  receiverMailData =
-    from: mailer.default_from
-    to: @to
-    subject: "Re: #{@subject}"
-    body: "#{@from} has sent you #{@amount} DOGE. What a joyous occasion!"
+    receiverMailData =
+      from: mailer.default_from
+      to: @to
+      subject: "Re: #{@subject}"
+      body: "#{@from} has sent you #{@amount} DOGE. What a joyous occasion!"
 
-  emailPromises = [senderMailData, receiverMailData].map (mailData) =>
-    new RSVP.Promise (resolve, reject) =>
-      mailer.sendMail mailData, (err, result) =>
-        if err then reject err
-        else resolve result
+    emailPromises = [senderMailData, receiverMailData].map (mailData) =>
+      new RSVP.Promise (resolve, reject) =>
+        mailer.sendMail mailData, (err, result) =>
+          if err then reject err
+          else resolve result
 
-  RSVP.all emailPromises
-  .then (emails) =>
-    @announced = true
-    @save()
-  .catch (reason) =>
-    console.log "Error sending emails for transaction #{@id}"
+    RSVP.all emailPromises
+    .then (emails) =>
+      @status = Transaction.STATUS.ANNOUNCED
+      @save()
+    .catch (reason) =>
+      console.log "Error sending emails for transaction #{@id}"
 
 transactionSchema.methods.serializeToObj = ->
   id: @id
@@ -74,7 +72,6 @@ transactionSchema.methods.serializeToObj = ->
   senderId: @senderId
   receiverId: @receiverId
   amount: @amount
-  announced: @announced
   createdAt: @createdAt
   subject: @subject
   status: @status
@@ -91,7 +88,7 @@ Transaction.serialize = (transactions, meta) ->
     transactions: transactions.map (transaction) -> transaction.serializeToObj()
     meta: meta
 
-statuses = ['PENDING', 'COMPLETE', 'DEPOSIT']
+statuses = ['PENDING', 'ANNOUNCED', 'COMPLETE', 'DEPOSIT']
 Transaction.STATUS = {}
 for i, v of statuses
   Transaction.STATUS[i] = v
