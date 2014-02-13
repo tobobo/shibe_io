@@ -3,8 +3,10 @@ Transaction = require '../models/transaction'
 module.exports =
   index: (req, res) ->
     if req.query.confirmationCode
+      req.logOut res
       query =
         confirmationCode: req.query.confirmationCode
+
     if query
       Transaction.find query, (err, transactions) =>
         res.write Transaction.serialize transactions
