@@ -25,7 +25,7 @@ req.logIn = (user, res, options, done) ->
 
   newCallback = (err) ->
     unless err?
-      res.cookie 'shibe', user._id, Math.random().toString(),
+      res.cookie 'shibe', user._id,
         maxAge: 60*60*1000
         domain: process.env.SHIBE_COOKIE_DOMAIN
     if done
