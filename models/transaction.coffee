@@ -73,24 +73,13 @@ transactionSchema.methods.assignUsers = ->
       User.find
         email: address
       , (err, users) =>
-        if users.length? and users[0]?
-          resolve users[0]
-        else
-          isNew = true
-          user = new User
-            email: address
-          user.save (err, user) =>
-            user.isNew = true
-            resolve user
+        resolve users[0]
 
   RSVP.all(userPromises).then (users) =>
     new RSVP.Promise (resolve, reject) =>
-      if users[1].isNew
-        @acceptance = Transaction.ACCEPTANCE.PENDING
-      @senderId = users[0].id
-      @receiverId = users[1].id
+      @senderId = users[0].id if users[0]?
+      @receiverId = users[1].id if users[1]?
       @save (err, transaction) ->
-
         resolve transaction
 
 transactionSchema.methods.sendEmails = ->
