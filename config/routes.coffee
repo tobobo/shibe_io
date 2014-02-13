@@ -11,6 +11,7 @@ module.exports = (app) ->
 
   app.post '/incoming', incoming.index
 
+  app.get '/users/:id', users.user
   app.post '/users/new', users.new
   app.post '/users/activate', users.activate
   app.post '/users/login', users.login

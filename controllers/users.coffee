@@ -1,6 +1,30 @@
 User = require '../models/user'
 
 module.exports =
+  user: (req, res, data) ->
+    id = req.params.id
+    if parseInt(id) == parseInt(req.user.id)
+      User.find
+        _id: id
+      , (err, users) ->
+        if users[0]?
+          output = users[0].serialize()
+        else
+          output = JSON.stringify
+            user: null
+            meta:
+              error: 'User not found?'
+        console.log output
+        res.write output
+        res.end()
+    else
+      res.write JSON.parse
+        user: null
+        meta:
+          error: "Not authorized to get that user."
+        res.end()
+
+
   new: (req, res, data) ->
     user = new User
       email: req.body.email
