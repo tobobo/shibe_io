@@ -12,6 +12,8 @@ transactionSchema = new mongoose.Schema
   senderId: String
   receiverId: String
   subject: String
+  confirmationCode: String
+  confirmationCodeCreatedAt: Date
   from: 
     type: String
     trim: true
@@ -28,6 +30,12 @@ defaults =
   createdAt: ->
     new Date
 
+  confirmationCodeCreatedAt: ->
+    new Date
+
+  confirmationCode: ->
+    crypto.createHash('md5').update(Math.random().toString()).digest('hex')
+
   id: ->
     crypto.createHash('md5').update(Math.random().toString()).digest('hex')
 
@@ -38,19 +46,22 @@ transactionSchema.post 'save', (transaction) ->
   if transaction.status == Transaction.STATUS.PENDING
     transaction.sendEmails()
 
+transactionSchema.methods.confirmationURL = ->
+  "#{process.env.SHIBE_FRONTEND_URL}/confirm/#{@confirmationCode}"
+
 transactionSchema.methods.sendEmails = ->
   if @status == Transaction.STATUS.PENDING and @from? and @to?
     senderMailData =
       from: mailer.default_from
       to: @from
       subject: "Re: #{@subject}"
-      body: "You sent #{@amount} DOGE to #{@to}. You are so generous. Pat yourself on the back."
+      body: "You sent #{@amount} DOGE to #{@to}. To confirm this transaction, go to #{@confirmationURL()}"
 
     receiverMailData =
       from: mailer.default_from
       to: @to
       subject: "Re: #{@subject}"
-      body: "#{@from} has sent you #{@amount} DOGE. What a joyous occasion!"
+      body: "#{@from} has sent you #{@amount} DOGE. What a joyous occasion! We'll let you know when they've confirmed the transaction."
 
     emailPromises = [senderMailData, receiverMailData].map (mailData) =>
       new RSVP.Promise (resolve, reject) =>
@@ -60,8 +71,10 @@ transactionSchema.methods.sendEmails = ->
 
     RSVP.all emailPromises
     .then (emails) =>
-      @status = Transaction.STATUS.ANNOUNCED
-      @save()
+      new RSVP.Promise (resolve, reject) =>
+        @status = Transaction.STATUS.ANNOUNCED
+        @save (err, transaction) =>
+          resolve transaction
     .catch (reason) =>
       console.log "Error sending emails for transaction #{@id}"
 
@@ -88,7 +101,7 @@ Transaction.serialize = (transactions, meta) ->
     transactions: transactions.map (transaction) -> transaction.serializeToObj()
     meta: meta
 
-statuses = ['PENDING', 'ANNOUNCED', 'COMPLETE', 'DEPOSIT']
+statuses = ['PENDING', 'ANNOUNCED', 'CONFIRMED', 'COMPLETE', 'DEPOSIT']
 Transaction.STATUS = {}
 for i, v of statuses
   Transaction.STATUS[i] = v

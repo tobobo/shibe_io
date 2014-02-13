@@ -72,7 +72,7 @@ describe 'doge_api', ->
       expect false
         .toBe true
       done()
-  , 10000
+  , 20000
 
   # these tests are suuuuper slow.... maybe i'm not supposed to make lots of bad api calls heh
 
