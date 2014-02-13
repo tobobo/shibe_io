@@ -13,8 +13,7 @@ module.exports =
           transaction._error = err
           resolve transaction
 
-    RSVP.all transactionPromises
-    .then (transactions) ->      
+    RSVP.all(transactionPromises).then (transactions) ->      
       res.write Transaction.serialize transactions,
         success: 'Transactions saved'
       res.end()
