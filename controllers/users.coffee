@@ -3,22 +3,23 @@ User = require '../models/user'
 module.exports =
   user: (req, res, data) ->
     id = req.params.id
-    if parseInt(id) == parseInt(req.user.id)
+    if req.user? and parseInt(id) == parseInt(req.user._id)
       User.find
         _id: id
       , (err, users) ->
         if users[0]?
           output = users[0].serialize()
         else
+          res.statusCode = 422
           output = JSON.stringify
             user: null
             meta:
               error: 'User not found?'
-        console.log output
         res.write output
         res.end()
     else
-      res.write JSON.parse
+      res.statusCode = 403
+      res.write JSON.stringify
         user: null
         meta:
           error: "Not authorized to get that user."

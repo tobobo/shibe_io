@@ -185,6 +185,8 @@ userSchema.methods.serialize = (meta) ->
       email: @email
       active: @active
       depositAddress: @depositAddress
+      balance: @balance
+      createdAt: @createdAt
     meta:
       meta
 
