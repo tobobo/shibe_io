@@ -139,27 +139,33 @@ transactionSchema.methods.sendEmails = ->
         console.log "Error sending emails for transaction #{@id}"
         console.log "reason:", reason
 
-transactionSchema.methods.serializeToObj = ->
-  id: @id
-  from: @from
-  to: @to
-  senderId: @senderId
-  receiverId: @receiverId
-  amount: @amount
-  createdAt: @createdAt
-  subject: @subject
-  status: @status
+transactionSchema.methods.serializeToObj = (additionalFields) ->
+  object = 
+    id: @id
+    from: @from
+    to: @to
+    senderId: @senderId
+    receiverId: @receiverId
+    amount: @amount
+    createdAt: @createdAt
+    subject: @subject
+    status: @status
+  if additionalFields? then for field in additionalFields
+    object[field] = @[field]
 
-transactionSchema.methods.serialize = (meta) ->
+  object
+
+
+transactionSchema.methods.serialize = (meta, additionalFields) ->
   JSON.stringify
-    transaction: @serializeToObj
+    transaction: @serializeToObj additionalFields
     meta: meta
 
 Transaction = mongoose.model 'Transaction', transactionSchema
 
-Transaction.serialize = (transactions, meta) ->
+Transaction.serialize = (transactions, meta, additionalFields) ->
   JSON.stringify
-    transactions: transactions.map (transaction) -> transaction.serializeToObj()
+    transactions: transactions.map (transaction) -> transaction.serializeToObj(additionalFields)
     meta: meta
 
 constants =
