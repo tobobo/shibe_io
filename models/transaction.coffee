@@ -77,6 +77,18 @@ transactionSchema.methods.assignUsers = ->
 
   RSVP.all(userPromises).then (users) =>
     new RSVP.Promise (resolve, reject) =>
+      if users[0]?
+        resolve users
+      else
+        console.log 'creating new sender user'
+        sender = new User
+          email: @from
+        sender.save (err, sender) =>
+          console.log 'created new sender user'
+          users[0] = sender
+          resolve users
+  .then (users) =>
+    new RSVP.Promise (resolve, reject) =>
       @senderId = users[0].id if users[0]?
       @receiverId = users[1].id if users[1]?
       @save (err, transaction) ->
@@ -139,6 +151,8 @@ transactionSchema.methods.serializeToObj = (additionalFields) ->
     createdAt: @createdAt
     subject: @subject
     status: @status
+    confirmation: @confirmation
+    acceptance: @acceptance
   if additionalFields? then for field in additionalFields
     object[field] = @[field]
 
