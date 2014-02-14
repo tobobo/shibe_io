@@ -64,6 +64,59 @@ userSchema.methods.updateBalanceFromDeposits = ->
         else
           resolve 0
 
+userSchema.methods.updateBalanceFromSends = ->
+  new RSVP.Promise (resolve, reject) =>
+    Transaction.find
+      senderId: @id
+      status: Transaction.STATUS.COMPLETE
+    , (err, transactions) =>
+      if err?
+        reject err
+      else
+        prevSent = @sent
+        transactionSum = transactions.map (transaction) =>
+          transaction.amount
+        .reduce (a, b) ->
+          a + b
+        , 0
+        if transactionSum > prevSent
+          @sent = transactionSum
+          @balance = @deposited + @received - @sent
+          @save (err, user) =>
+            resolve transactionSum - prevSent
+        else
+          resolve 0
+
+userSchema.methods.updateBalanceFromReceipts = ->
+  new RSVP.Promise (resolve, reject) =>
+    Transaction.find
+      receiverId: @id
+      status: Transaction.STATUS.COMPLETE
+    , (err, transactions) =>
+      if err?
+        reject err
+      else
+        prevReceived = @received
+        transactionSum = transactions.map (transaction) =>
+          transaction.amount
+        .reduce (a, b) ->
+          a + b
+        , 0
+        if transactionSum > prevReceived
+          @received = transactionSum
+          @balance = @deposited + @received - @sent
+          @save (err, user) =>
+            resolve transactionSum - prevReceived
+        else
+          resolve 0
+
+userSchema.methods.updateBalanceFromTransactions = ->
+  @updateBalanceFromSends().then(@updateBalanceFromReceipts())
+  .then ->
+    RSVP.resolve @
+  , (error) ->
+    RSVP.reject reason
+
 userSchema.methods.checkDeposits = ->
   (=>
     if @depositAddress?

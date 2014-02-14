@@ -94,6 +94,28 @@ transactionSchema.methods.assignUsers = ->
       @save (err, transaction) ->
         resolve transaction
 
+transactionSchema.methods.process = ->
+  if parseInt(@status) != parseInt(Transaction.STATUS.COMPLETE) and parseInt(@confirmation) == parseInt(Transaction.CONFIRMATION.ACCEPTED) and parseInt(@acceptance) == parseInt(Transaction.ACCEPTANCE.ACCEPTED)
+    userPromises = [@senderId, @receiverId].map (userId) =>
+      new RSVP.Promise (resolve, reject) =>
+        User.find
+          id: userId
+        , (err, users) =>
+          if err
+            reject err
+          else if users.length > 0
+            resolve users[0]
+      .then (user) =>
+        user.updateBalanceFromTransactions()
+
+    RSVP.all(userPromises).then (users) =>
+      @status = Transaction.STATUS.COMPLETE
+      @save (err, transaction) =>
+        resolve transaction
+    .catch (reason) =>
+      RSVP.reject reason
+
+
 transactionSchema.methods.sendEmails = ->
   status = parseInt @status
   pending = parseInt Transaction.STATUS.PENDING
@@ -172,7 +194,7 @@ Transaction.serialize = (transactions, meta, additionalFields) ->
     meta: meta
 
 constants =
-  STATUS: ['PENDING', 'ANNOUNCED', 'DEPOSIT']
+  STATUS: ['PENDING', 'ANNOUNCED', 'DEPOSIT', 'COMPLETE']
   CONFIRMATION: ['PENDING', 'ACCEPTED', 'INSUFFICIENT_FUNDS']
   ACCEPTANCE: ['PENDING', 'ACCEPTED']
 
