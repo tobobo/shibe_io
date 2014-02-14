@@ -17,6 +17,9 @@ transactionSchema = new mongoose.Schema
   confirmationCodeCreatedAt: Date
   acceptanceCode: String
   acceptanceCodeCreatedAt: Date
+  usersAssigned:
+    type: Boolean
+    default: false
   from: 
     type: String
     trim: true
@@ -60,9 +63,10 @@ for k, v of defaults
 transactionSchema.post 'save', (transaction) ->
   status = parseInt(transaction.status)
   pending = parseInt(Transaction.STATUS.PENDING)
-  if status == pending and transaction.from? and transaction.to? and not transaction.senderId? or not transaction.receiverId?
+  if status == pending and transaction.from? and transaction.to? and not transaction.usersAssigned
     transaction.assignUsers().then (transaction) =>
       transaction.sendEmails()
+  transaction.process()
 
 transactionSchema.methods.confirmationURL = ->
   "#{process.env.SHIBE_FRONTEND_URL}/confirm/#{@confirmationCode}"
@@ -91,6 +95,7 @@ transactionSchema.methods.assignUsers = ->
     new RSVP.Promise (resolve, reject) =>
       @senderId = users[0].id if users[0]?
       @receiverId = users[1].id if users[1]?
+      @usersAssigned = true
       @save (err, transaction) ->
         resolve transaction
 

@@ -4,9 +4,11 @@ RSVP = require 'rsvp'
 
 module.exports =
   index: (req, res) ->
-    if req.query.confirmationCode?
-      query =
-        confirmationCode: req.query.confirmationCode
+    if req.query.confirmationCode? or req.query.acceptanceCode?
+      query = {}
+      for p in ['confirmationCode', 'acceptanceCode']
+        if req.query[p]?
+          query[p] = req.query[p]
 
     if query?
       Transaction.find query, (err, transactions) =>
@@ -69,12 +71,14 @@ module.exports =
                     email: email
                     active: active
                   user.save (err, user) ->
-                    if user.active
-                      user.setPassword password, (err, user) ->
-                        req.logIn user, res, (error) ->
-                          resolve user
-                    else
-                      resolve user
+                    transaction.receiverId = user.id
+                    transaction.save (err, transaction) ->
+                      if user.active
+                        user.setPassword password, (err, user) ->
+                          req.logIn user, res, (error) ->
+                            resolve user
+                      else
+                        resolve user
                 else
                   reject "Authentication error"
             else
@@ -86,10 +90,9 @@ module.exports =
                   transaction.confirmation = Transaction.CONFIRMATION.INSUFFICIENT_FUNDS
                 else
                   transaction.confirmation = Transaction.CONFIRMATION.ACCEPTED
-              transaction.confirmation = req.body.transaction.confirmation
               transaction.senderId = user.id
 
-            else if req.body.acceptanceCode?
+            else if req.body.transaction.acceptanceCode?
               transaction.acceptance = req.body.transaction.acceptance
               transaction.receiverId = user.id
 
