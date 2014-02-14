@@ -95,7 +95,7 @@ userSchema.methods.checkDeposits = ->
     if amountDeposited > 0
       @updateBalanceFromDeposits()
     else
-      RSVP.resolve @balance
+      RSVP.resolve amountDeposits
 
 
 
