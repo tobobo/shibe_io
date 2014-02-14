@@ -29,9 +29,9 @@ module.exports =
     if id? and (confirmationCode? or acceptanceCode?)
       query = 
         id: req.params.id
-      for p, v of { confirmationCode: req.body.confirmationCode, acceptanceCode: req.body.acceptanceCode }
-        if v?
-          query[p] = v
+      for v of ['confirmationCode', 'acceptanceCode']
+        if req.body[v]?
+          query[p] = req.body[v]
 
       Transaction.find query, (err, transactions) =>
         if transactions.length > 0
