@@ -4,8 +4,8 @@ db_url = process.env.SHIBE_DB_URL
 module.exports.mongoose = mongoose
 reconnectTimer = 1
 
-module.exports.connect = connect = ->
-  mongoose.connect db_url
+module.exports.connect = connect = (cb) ->
+  mongoose.connect db_url, cb
 
 mongoose.connection.on 'open', ->
   reconnectTimer = 1

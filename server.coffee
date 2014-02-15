@@ -2,9 +2,10 @@ require 'newrelic'
 express = require "express"
 passport = require 'passport'
 db = require "./config/db"
-db.connect()
 
 app = express()
+
+MongoStore = require('connect-mongo') express
 
 app.use express.static('public')
 app.use express.bodyParser()
@@ -12,6 +13,11 @@ app.use express.methodOverride()
 app.use express.cookieParser(process.env.SHIBE_SESSION_SECRET)
 app.use express.session
   secret: process.env.SHIBE_SESSION_SECRET
+  store: new MongoStore
+    db: 'shibe-session'
+    connection: db.mongoose.connection
+  , (db) ->
+    console.log 'mongo store connected'
   cookie:
     maxAge: 60*60*1000
     domain: process.env.SHIBE_COOKIE_DOMAIN
@@ -40,5 +46,5 @@ app.use require('./utils/origin_middleware.coffee')
 
 require("./config/routes.coffee")(app)
 
-db.mongoose.connection.on 'open', ->
+db.connect ->
   app.listen Number(process.env.PORT or 8888)
