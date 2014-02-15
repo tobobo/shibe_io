@@ -10,10 +10,8 @@ User = models.User
 db.connect()
 
 db.mongoose.connection.on 'open', ->
-  console.log "connection open"
   start = (new Date).getTime()
   User.find (err, users) ->
-    console.log "users found"
     totalUsers = users.length
     usersChecked = 0
 
@@ -27,7 +25,6 @@ db.mongoose.connection.on 'open', ->
       process.exit(1)
 
     users.forEach (user) -> 
-      console.log 'updating balance for', user.email
       user.checkDeposits().then (deposited) ->
         console.log "#{user.email} deposited #{deposited}"
         exitIfDone()

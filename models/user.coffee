@@ -42,6 +42,7 @@ userSchema = new mongoose.Schema
 
 userSchema.methods.checkDeposits = ->
   (=>
+    console.log 'getting deposit address'
     if @depositAddress?
       RSVP.resolve @depositAddress
     else
@@ -51,11 +52,10 @@ userSchema.methods.checkDeposits = ->
   .then (amount) =>
     amount = parseFloat amount
     prev_amount = @deposited
-    new RSVP.Promise (resolve, reject) ->
-      if amount > prev_amount
-        resolve amount - prev_amount
-      else
-        resolve 0
+    if amount > prev_amount
+      RSVP.resolve amount - prev_amount
+    else
+      RSVP.resolve 0
   .then (amountDeposited) =>
     new RSVP.Promise (resolve, reject) =>
       if amountDeposited > 0
@@ -71,7 +71,7 @@ userSchema.methods.checkDeposits = ->
     if amountDeposited > 0
       @updateBalance()
     else
-      RSVP.resolve amountDeposits
+      RSVP.resolve amountDeposited
 
 
 

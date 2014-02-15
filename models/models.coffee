@@ -37,11 +37,9 @@ transactionSchema.methods.assignUsers = ->
       if users[0]?
         resolve users
       else
-        console.log 'creating new sender user'
         sender = new User
           email: @from
         sender.save (err, sender) =>
-          console.log 'created new sender user'
           users[0] = sender
           resolve users
   .then (users) =>
@@ -54,7 +52,6 @@ transactionSchema.methods.assignUsers = ->
 
 transactionSchema.methods.process = ->
   if (parseInt(@status) not in [parseInt(Transaction.STATUS.COMPLETE), parseInt(Transaction.STATUS.DEPOSIT)]) and parseInt(@confirmation) == parseInt(Transaction.CONFIRMATION.ACCEPTED) and parseInt(@acceptance) == parseInt(Transaction.ACCEPTANCE.ACCEPTED)
-    console.log 'marking transaction as complete'
     @status = Transaction.STATUS.COMPLETE
 
     new RSVP.Promise (resolve, reject) =>
@@ -66,15 +63,12 @@ transactionSchema.methods.process = ->
         User.findOne
           _id: userId
         .exec().then (user) =>
-          console.log "updating balance for #{user._id}"
-          console.log 'updating user'
           user.updateBalance()
 
       RSVP.all(userPromises)
     .then (users) =>
       new RSVP.Promise (resolve, reject) =>
         @save (err, transaction) =>
-          console.log 'transaction complete'
           resolve transaction
     .catch (reason) =>
       RSVP.reject reason
@@ -155,34 +149,24 @@ userSchema.methods.acceptTransactions = ->
         resolve transactions
 
 userSchema.methods.updateBalance = ->
-  console.log "updating balance for @id"
   sent = 0
   received = 0
   deposited = 0
   @getTransactions().then (transactions) =>
-    console.log 'gotten transactions'
-    console.log 'transactions length', transactions.length
     new RSVP.Promise (resolve, reject) =>
       transactions.forEach (transaction) =>
-        console.log 'divvying transaction', transaction.receiverId == @id, parseInt(transaction.status) == parseInt(Transaction.STATUS.DEPOSIT), 
         if transaction.receiverId == @id
           received += transaction.amount
-          console.log 'added to received'
         else if parseInt(transaction.status) == parseInt(Transaction.STATUS.DEPOSIT)
           deposited += transaction.amount
-          console.log 'added to deposit'
         else if transaction.senderId == @id
-          console.log 'added to sent'
           sent += transaction.amount
-      console.log 'got values'
       if @received != received or @deposited != deposited or @sent != sent
         @received = received
         @deposited = deposited
         @sent = sent
         @balance = @deposited + @received - @sent
-        console.log @balance, @deposited, @received, @sent
         @save (err, user) =>
-          console.log 'saved user'
           resolve user
       else
         resolve @
