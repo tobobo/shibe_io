@@ -15,21 +15,15 @@ module.exports =
         Transaction.find(query).exec()
 
       else if req.query.userId?
-        console.log 'there is a user id'
         if req.user? and parseInt(req.query.userId) == parseInt(req.user._id)
-          console.log 'promising'
-          User.findOne
-            _id: req.query.userId
-          .exec().then (user) =>
-            user.getTransactions()
+          req.user.getTransactions()
         else
-          console.log 'rejecting'
           RSVP.reject "Not authorized to get transactions for that user"
 
       else
         RSVP.reject "Cannot get all transactions"
     )().then (transactions) =>
-      if (query.confirmationCode? or query.acceptanceCode?) and transactions.length > 0
+      if (query? and (query.confirmationCode? or query.acceptanceCode?)) and transactions.length > 0
         req.logOut res
       res.write Transaction.serialize transactions
       res.end()
