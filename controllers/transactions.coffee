@@ -49,7 +49,6 @@ module.exports =
 
       Transaction.find query, (err, transactions) =>
         if transactions.length > 0
-          req.logOut res
           transaction = transactions[0]
           new RSVP.Promise (resolve, reject) =>
             if req.body.transaction.userEmail? and req.body.transaction.userPassword?
@@ -66,6 +65,8 @@ module.exports =
                         reject "Authentication error"
                       else
                         req.logIn user, res, (error) ->
+                          console.log 'error', error
+                          console.log 'logged in', user.email
                           resolve user
                   else
                     console.log 'activating user'
@@ -75,6 +76,7 @@ module.exports =
                         req.logIn user, res, (error) ->
                           resolve user
                 else if req.body.transaction.acceptanceCode?
+
                   if email == transaction.to
                     active = true
                     password = password
@@ -93,6 +95,7 @@ module.exports =
                           req.logIn user, res, (error) ->
                             resolve user
                       else
+                        req.logOut res
                         resolve user
                 else
                   reject "Authentication error"
@@ -101,17 +104,15 @@ module.exports =
           .then (user) ->
             console.log "confirmed by #{user.email}"
             if req.body.transaction.confirmationCode?
-              console.log 'there was a confirmation code'
               if parseInt(req.body.transaction.confirmation) == parseInt(Transaction.CONFIRMATION.ACCEPTED)
                 if user.balance < transaction.amount
-                  console.log 'insufficient funds'
                   transaction.confirmation = Transaction.CONFIRMATION.INSUFFICIENT_FUNDS
                 else
-                  console.log 'sufficient funds'
                   transaction.confirmation = Transaction.CONFIRMATION.ACCEPTED
               transaction.senderId = user.id
 
             else if req.body.transaction.acceptanceCode?
+                  
               transaction.acceptance = req.body.transaction.acceptance
               transaction.receiverId = user.id
 
@@ -120,6 +121,7 @@ module.exports =
               res.end()
 
           , (error) ->
+            req.logOut res
             res.write JSON.stringify
               transaction: null
               meta:
