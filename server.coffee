@@ -2,6 +2,7 @@ require 'newrelic'
 express = require "express"
 passport = require 'passport'
 db = require "./config/db"
+db.connect()
 
 app = express()
 
@@ -15,7 +16,10 @@ app.use express.session
   secret: process.env.SHIBE_SESSION_SECRET
   store: new MongoStore
     db: 'shibe-session'
-    url: db.mongoose.connection.url
+    host: db.mongoose.connection.host
+    port: db.mongoose.connection.port
+    user: db.mongoose.connection.user
+    pass: db.mongoose.connection.pass
   , (db) ->
     console.log 'mongo store connected'
   cookie:
@@ -46,5 +50,5 @@ app.use require('./utils/origin_middleware.coffee')
 
 require("./config/routes.coffee")(app)
 
-db.connect ->
+db.mongoose.connection.on 'open', ->
   app.listen Number(process.env.PORT or 8888)
