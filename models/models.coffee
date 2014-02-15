@@ -53,6 +53,7 @@ transactionSchema.methods.assignUsers = ->
 transactionSchema.methods.process = ->
   if (parseInt(@status) not in [parseInt(Transaction.STATUS.COMPLETE), parseInt(Transaction.STATUS.DEPOSIT)]) and parseInt(@confirmation) == parseInt(Transaction.CONFIRMATION.ACCEPTED) and parseInt(@acceptance) == parseInt(Transaction.ACCEPTANCE.ACCEPTED)
     @status = Transaction.STATUS.COMPLETE
+    @completedAt = new Date
 
     new RSVP.Promise (resolve, reject) =>
       @save (err, transaction) =>

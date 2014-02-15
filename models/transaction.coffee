@@ -9,6 +9,7 @@ transactionSchema = new mongoose.Schema
     type: Number
     required: true
   createdAt: Date
+  completedAt: Date
   senderId: String
   receiverId: String
   subject: String
@@ -75,6 +76,7 @@ transactionSchema.methods.serializeToObj = (additionalFields) ->
     status: @status
     confirmation: @confirmation
     acceptance: @acceptance
+    completedAt: @completedAt
   if additionalFields? then for field in additionalFields
     object[field] = @[field]
 
