@@ -12,6 +12,7 @@ transactionSchema = new mongoose.Schema
   completedAt: Date
   senderId: String
   receiverId: String
+  receiverAddress: String
   subject: String
   confirmationCode: String
   confirmationCodeCreatedAt: Date
