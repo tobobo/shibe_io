@@ -7,6 +7,8 @@ reconnectTimer = 1
 module.exports.connect = connect = (cb) ->
   mongoose.connect db_url, cb
 
+module.exports.url = db_url
+
 mongoose.connection.on 'open', ->
   reconnectTimer = 1
 

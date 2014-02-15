@@ -15,11 +15,8 @@ app.use express.cookieParser(process.env.SHIBE_SESSION_SECRET)
 app.use express.session
   secret: process.env.SHIBE_SESSION_SECRET
   store: new MongoStore
-    db: 'shibe-session'
-    host: db.mongoose.connection.host
-    port: db.mongoose.connection.port
-    user: db.mongoose.connection.user
-    pass: db.mongoose.connection.pass
+    collection: 'shibe-session'
+    url: db.url
   , (db) ->
     console.log 'mongo store connected'
   cookie:
