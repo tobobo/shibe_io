@@ -1,28 +1,44 @@
 models = require '../models/models'
-RSVP = require 'rsvp'
+RSVP = require '../utils/rsvp'
 
 Transaction = models.Transaction
 User = models.User
 
 module.exports =
   index: (req, res) ->
-    if req.query.confirmationCode? or req.query.acceptanceCode?
-      query = {}
-      for p in ['confirmationCode', 'acceptanceCode']
-        if req.query[p]?
-          query[p] = req.query[p]
+    (->
+      if req.query.confirmationCode? or req.query.acceptanceCode?
+        query = {}
+        for p in ['confirmationCode', 'acceptanceCode']
+          if req.query[p]?
+            query[p] = req.query[p]
+        Transaction.find(query).exec()
 
-    if query?
-      Transaction.find query, (err, transactions) =>
-        if (query.confirmationCode? or query.acceptanceCode?) and transactions.length > 0
-          req.logOut res
-        res.write Transaction.serialize transactions
-        res.end()
-    else
+      else if req.query.userId?
+        console.log 'there is a user id'
+        if req.user? and parseInt(req.query.userId) == parseInt(req.user._id)
+          console.log 'promising'
+          User.findOne
+            _id: req.query.userId
+          .exec().then (user) =>
+            user.getTransactions()
+        else
+          console.log 'rejecting'
+          RSVP.reject "Not authorized to get transactions for that user"
+
+      else
+        RSVP.reject "Cannot get all transactions"
+    )().then (transactions) =>
+      if (query.confirmationCode? or query.acceptanceCode?) and transactions.length > 0
+        req.logOut res
+      res.write Transaction.serialize transactions
+      res.end()
+    , (error) =>
+      res.statusCode = 403
       res.write JSON.stringify
         transactions: []
         meta:
-          error: "Cannot get all transactions."
+          error: error
       res.end()
 
   update: (req, res) ->
