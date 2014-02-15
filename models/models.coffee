@@ -124,7 +124,7 @@ transactionSchema.methods.sendEmails = ->
 # user methods that need transactions
 
 userSchema.methods.getTransactions = ->
-  Transaction.find({$or: [{senderId: @id}, {receiverId: @id}]}).exec()
+  Transaction.find({$or: [{senderId: @id}, {receiverId: @id}]}).sort('-createdAt').exec()
 
 userSchema.methods.acceptTransactions = ->
   new RSVP.Promise (resolve, reject) ->
