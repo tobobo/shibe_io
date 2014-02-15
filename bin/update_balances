@@ -1,9 +1,11 @@
 #!/usr/bin/env coffee
 
-User = require '../models/user'
+models = require '../models/models'
 db = require '../config/db'
 doge_api = require '../config/doge_api'
 RSVP = require 'rsvp'
+
+User = models.User
 
 db.connect()
 

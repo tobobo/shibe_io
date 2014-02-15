@@ -1,4 +1,5 @@
-User = require '../models/user'
+models = require '../models/models'
+User = models.User
 
 module.exports =
   user: (req, res, data) ->

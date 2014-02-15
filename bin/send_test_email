@@ -6,7 +6,7 @@ host = 'http://127.0.0.1:8888'
 
 from = process.env.SHIBE_TEST_EMAIL_FROM
 to = process.env.SHIBE_TEST_EMAIL_TO
-amount = 200
+amount = 20
 subject = "#{amount} doge"
 events = [
   ts: (new Date).getTime()

@@ -1,24 +1,44 @@
-Transaction = require '../models/transaction'
-User = require '../models/user'
-RSVP = require 'rsvp'
+models = require '../models/models'
+RSVP = require '../utils/rsvp'
+
+Transaction = models.Transaction
+User = models.User
 
 module.exports =
   index: (req, res) ->
-    if req.query.confirmationCode?
-      query =
-        confirmationCode: req.query.confirmationCode
+    (->
+      if req.query.confirmationCode? or req.query.acceptanceCode?
+        query = {}
+        for p in ['confirmationCode', 'acceptanceCode']
+          if req.query[p]?
+            query[p] = req.query[p]
+        Transaction.find(query).exec()
 
-    if query?
-      Transaction.find query, (err, transactions) =>
-        if (query.confirmationCode? or query.acceptanceCode?) and transactions.length > 0
-          req.logOut res
-        res.write Transaction.serialize transactions
-        res.end()
-    else
+      else if req.query.userId?
+        console.log 'there is a user id'
+        if req.user? and parseInt(req.query.userId) == parseInt(req.user._id)
+          console.log 'promising'
+          User.findOne
+            _id: req.query.userId
+          .exec().then (user) =>
+            user.getTransactions()
+        else
+          console.log 'rejecting'
+          RSVP.reject "Not authorized to get transactions for that user"
+
+      else
+        RSVP.reject "Cannot get all transactions"
+    )().then (transactions) =>
+      if (query.confirmationCode? or query.acceptanceCode?) and transactions.length > 0
+        req.logOut res
+      res.write Transaction.serialize transactions
+      res.end()
+    , (error) =>
+      res.statusCode = 403
       res.write JSON.stringify
         transactions: []
         meta:
-          error: "Cannot get all transactions."
+          error: error
       res.end()
 
   update: (req, res) ->
@@ -29,9 +49,9 @@ module.exports =
     if id? and (confirmationCode? or acceptanceCode?)
       query = 
         id: req.params.id
-      for p, v of { confirmationCode: req.body.confirmationCode, acceptanceCode: req.body.acceptanceCode }
-        if v?
-          query[p] = v
+      for v of ['confirmationCode', 'acceptanceCode']
+        if req.body[v]?
+          query[p] = req.body[v]
 
       Transaction.find query, (err, transactions) =>
         if transactions.length > 0
@@ -54,9 +74,12 @@ module.exports =
                         req.logIn user, res, (error) ->
                           resolve user
                   else
-                    user.setPassword password, (err, user) ->
-                      req.logIn user, res, (error) ->
-                        resolve user
+                    console.log 'activating user'
+                    user.active = true
+                    user.save (err, user) ->
+                      user.setPassword password, (err, user) ->
+                        req.logIn user, res, (error) ->
+                          resolve user
                 else if req.body.transaction.acceptanceCode?
                   if email == transaction.to
                     active = true
@@ -69,27 +92,32 @@ module.exports =
                     email: email
                     active: active
                   user.save (err, user) ->
-                    if user.active
-                      user.setPassword password, (err, user) ->
-                        req.logIn user, res, (error) ->
-                          resolve user
-                    else
-                      resolve user
+                    transaction.receiverId = user.id
+                    transaction.save (err, transaction) ->
+                      if user.active
+                        user.setPassword password, (err, user) ->
+                          req.logIn user, res, (error) ->
+                            resolve user
+                      else
+                        resolve user
                 else
                   reject "Authentication error"
             else
               reject "Please enter a username and password"
           .then (user) ->
+            console.log "confirmed by #{user.email}"
             if req.body.transaction.confirmationCode?
+              console.log 'there was a confirmation code'
               if parseInt(req.body.transaction.confirmation) == parseInt(Transaction.CONFIRMATION.ACCEPTED)
                 if user.balance < transaction.amount
+                  console.log 'insufficient funds'
                   transaction.confirmation = Transaction.CONFIRMATION.INSUFFICIENT_FUNDS
                 else
+                  console.log 'sufficient funds'
                   transaction.confirmation = Transaction.CONFIRMATION.ACCEPTED
-              transaction.confirmation = req.body.transaction.confirmation
               transaction.senderId = user.id
 
-            else if req.body.acceptanceCode?
+            else if req.body.transaction.acceptanceCode?
               transaction.acceptance = req.body.transaction.acceptance
               transaction.receiverId = user.id
 

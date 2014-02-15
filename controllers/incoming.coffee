@@ -1,6 +1,7 @@
 mandrill_events = require '../utils/mandrill_events'
 RSVP = require 'rsvp'
-Transaction = require '../models/transaction'
+models = require '../models/models'
+Transaction = models.Transaction
 
 module.exports =
   index: (req, res, data) ->

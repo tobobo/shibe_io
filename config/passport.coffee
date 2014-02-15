@@ -1,7 +1,8 @@
 passport = require('passport')
 http = require 'http'
 LocalStrategy = require('passport-local').Strategy
-User = require '../models/user.coffee'
+models = require '../models/models.coffee'
+User = models.User
 
 passport.use new LocalStrategy(User.authenticate())
 
