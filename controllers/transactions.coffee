@@ -1,6 +1,8 @@
-Transaction = require '../models/transaction'
-User = require '../models/user'
+models = require '../models/models'
 RSVP = require 'rsvp'
+
+Transaction = models.Transaction
+User = models.User
 
 module.exports =
   index: (req, res) ->
@@ -56,9 +58,12 @@ module.exports =
                         req.logIn user, res, (error) ->
                           resolve user
                   else
-                    user.setPassword password, (err, user) ->
-                      req.logIn user, res, (error) ->
-                        resolve user
+                    console.log 'activating user'
+                    user.active = true
+                    user.save (err, user) ->
+                      user.setPassword password, (err, user) ->
+                        req.logIn user, res, (error) ->
+                          resolve user
                 else if req.body.transaction.acceptanceCode?
                   if email == transaction.to
                     active = true
@@ -84,11 +89,15 @@ module.exports =
             else
               reject "Please enter a username and password"
           .then (user) ->
+            console.log "confirmed by #{user.email}"
             if req.body.transaction.confirmationCode?
+              console.log 'there was a confirmation code'
               if parseInt(req.body.transaction.confirmation) == parseInt(Transaction.CONFIRMATION.ACCEPTED)
                 if user.balance < transaction.amount
+                  console.log 'insufficient funds'
                   transaction.confirmation = Transaction.CONFIRMATION.INSUFFICIENT_FUNDS
                 else
+                  console.log 'sufficient funds'
                   transaction.confirmation = Transaction.CONFIRMATION.ACCEPTED
               transaction.senderId = user.id
 

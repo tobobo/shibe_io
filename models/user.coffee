@@ -3,7 +3,6 @@ passportLocalMongoose = require 'passport-local-mongoose'
 crypto = require 'crypto'
 mailer = require '../config/mailer'
 doge_api = require '../config/doge_api'
-Transaction = require '../models/transaction'
 
 RSVP = require '../utils/rsvp'
 
@@ -41,82 +40,6 @@ userSchema = new mongoose.Schema
     type: Boolean
     default: false
 
-userSchema.methods.updateBalanceFromDeposits = ->
-  new RSVP.Promise (resolve, reject) =>
-    prev_deposited = @deposited
-    Transaction.find
-      receiverId: @id
-      status: Transaction.STATUS.DEPOSIT
-    , (err, transactions) =>
-      if err?
-        reject err
-      else
-        transactionSum = transactions.map (transaction) =>
-          transaction.amount
-        .reduce (a, b) ->
-          a + b
-        , 0
-        if transactionSum > prev_deposited
-          @deposited = transactionSum
-          @balance = @deposited + @received - @sent
-          @save (err, user) ->
-            resolve transactionSum - prev_deposited
-        else
-          resolve 0
-
-userSchema.methods.updateBalanceFromSends = ->
-  new RSVP.Promise (resolve, reject) =>
-    Transaction.find
-      senderId: @id
-      status: Transaction.STATUS.COMPLETE
-    , (err, transactions) =>
-      if err?
-        reject err
-      else
-        prevSent = @sent
-        transactionSum = transactions.map (transaction) =>
-          transaction.amount
-        .reduce (a, b) ->
-          a + b
-        , 0
-        if transactionSum > prevSent
-          @sent = transactionSum
-          @balance = @deposited + @received - @sent
-          @save (err, user) =>
-            resolve transactionSum - prevSent
-        else
-          resolve 0
-
-userSchema.methods.updateBalanceFromReceipts = ->
-  new RSVP.Promise (resolve, reject) =>
-    Transaction.find
-      receiverId: @id
-      status: Transaction.STATUS.COMPLETE
-    , (err, transactions) =>
-      if err?
-        reject err
-      else
-        prevReceived = @received
-        transactionSum = transactions.map (transaction) =>
-          transaction.amount
-        .reduce (a, b) ->
-          a + b
-        , 0
-        if transactionSum > prevReceived
-          @received = transactionSum
-          @balance = @deposited + @received - @sent
-          @save (err, user) =>
-            resolve transactionSum - prevReceived
-        else
-          resolve 0
-
-userSchema.methods.updateBalanceFromTransactions = ->
-  @updateBalanceFromSends().then(@updateBalanceFromReceipts())
-  .then ->
-    RSVP.resolve @
-  , (error) ->
-    RSVP.reject reason
-
 userSchema.methods.checkDeposits = ->
   (=>
     if @depositAddress?
@@ -146,7 +69,7 @@ userSchema.methods.checkDeposits = ->
         resolve amountDeposited
   .then (amountDeposited) =>
     if amountDeposited > 0
-      @updateBalanceFromDeposits()
+      @updateBalance()
     else
       RSVP.resolve @balance
 
@@ -182,39 +105,6 @@ userSchema.methods.createDepositAddress = ->
     new RSVP.Promise (resolve, reject) ->
       reject "No email address"
 
-userSchema.methods.acceptTransactions = ->
-  new RSVP.Promise (resolve, reject) ->
-    Transaction.find
-      receiverId: @id
-      acceptance: Transaction.ACCEPTANCE.PENDING
-    , (err, transactions) ->
-      resolve transactions
-  .then (transactions) =>
-    if transactions.length > 0
-      transactionPromises = transactions.map (transaction) ->
-        new RSVP.Promise (resolve, reject) ->
-          transaction.acceptance = Transaction.ACCEPTANCE.ACCEPTED
-          transaction.save (err, transaction) ->
-            resolve transaction
-      RSVP.all transactionPromises
-    else
-      RSVP.resolve transactions
-  .then (transactions) =>
-    new RSVP.Promise (resolve, reject) =>
-      @transactionsAccepted = true
-      @save (err, user) ->
-        resolve transactions
-
-
-userSchema.post 'save', (user) ->
-  unless user.activationEmailSent
-    user.sendActivationEmail()
-  if user.active and not user.depositAddress?
-    user.createDepositAddress()
-  if user.active and not user.transactionsAccepted
-    user.acceptTransactions()
-
-
 defaults =
   createdAt: ->
     new Date
@@ -243,4 +133,4 @@ userSchema.methods.serialize = (meta) ->
     meta:
       meta
 
-module.exports = mongoose.model 'User', userSchema
+module.exports = userSchema
