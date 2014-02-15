@@ -1,0 +1,9 @@
+#!/usr/bin/env coffee
+
+request = require 'request'
+
+request.get 'http://www.shibe.io', (error, response, body) ->
+  if error
+    console.log 'error pinging shibe.io'
+  else
+    console.log 'ping to shibe.io successful'

@@ -1,0 +1,33 @@
+#!/usr/bin/env coffee
+
+models = require '../models/models'
+db = require '../config/db'
+doge_api = require '../config/doge_api'
+RSVP = require 'rsvp'
+
+User = models.User
+Transaction = models.Transaction
+
+db.connect()
+
+db.mongoose.connection.on 'open', ->
+  thisUser = null
+  User.findOne
+    email: process.env.SHIBE_TEST_EMAIL_FROM
+  .exec().then (user) ->
+    thisUser = user
+    transaction = new Transaction
+      amount: 50
+      receiverId: thisUser._id
+      status: Transaction.STATUS.DEPOSIT
+    new RSVP.Promise (resolve, reject) ->
+      transaction.save (err, transaction) ->
+        resolve transaction
+  .then ->
+    console.log 'transaction saved'
+    thisUser.updateBalance()
+  .then ->
+    console.log 'user balance updated'
+    process.exit(1)
+
+
