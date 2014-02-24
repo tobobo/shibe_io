@@ -1,5 +1,6 @@
 mongoose = require 'mongoose'
 RSVP = require 'rsvp'
+mailer = require '../config/mailer'
 
 transactionSchema = require '../models/transaction'
 userSchema = require '../models/user'
