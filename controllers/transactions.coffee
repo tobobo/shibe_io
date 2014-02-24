@@ -35,6 +35,32 @@ module.exports =
           error: error
       res.end()
 
+  new: (req, res) ->
+    (->
+      if req.body.transaction? and req.body.transaction.senderId?
+        if req.body.transaction.senderId == req.user.id
+          params =
+            receiverAddress: req.body.transaction.receiverAddress
+            senderId: req.body.transaction.senderId
+            amount: req.body.transaction.amount
+
+          transaction = new Transaction params
+
+          transaction.process()
+        else
+          RSVP.reject "Cannot create transaction for that user."
+      else
+        RSVP.reject "No transaction parameters."
+    )().then (transaction) =>
+      console.log 'made transaction'
+      res.write transaction.serialize(),
+        success: 'Withdrawal complete.'
+      res.end()
+    (error) =>
+      res.write JSON.serialize
+        transaction: null
+        error: error
+
   update: (req, res) ->
     id = req.params.id
     if req.body.transaction?

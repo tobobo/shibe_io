@@ -17,7 +17,7 @@ db.mongoose.connection.on 'open', ->
   .exec().then (user) ->
     thisUser = user
     transaction = new Transaction
-      amount: 50
+      amount: 76029.039203
       receiverId: thisUser._id
       status: Transaction.STATUS.DEPOSIT
     new RSVP.Promise (resolve, reject) ->

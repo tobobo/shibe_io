@@ -18,5 +18,6 @@ module.exports = (app) ->
   app.delete '/users/logout', users.logout
 
   app.get '/transactions', transactions.index
+  app.post '/transactions', transactions.new
   app.put '/transactions/:id', transactions.update
 

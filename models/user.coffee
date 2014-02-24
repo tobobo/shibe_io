@@ -27,6 +27,7 @@ userSchema = new mongoose.Schema
     type: Number
     default: 0
   depositAddress: String
+  withdrawalAddress: String
   activationToken: String
   activationTokenCreatedAt: Date
   lastSignIn: Date

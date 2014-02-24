@@ -74,6 +74,31 @@ transactionSchema.methods.process = ->
     .catch (reason) =>
       RSVP.reject reason
 
+  else if @status == Transaction.STATUS.WITHDRAWAL and @receiverAddress?
+    console.log 'processing'
+    senderId = transaction.senderId
+    this_transaction = null
+    @process()
+    .then (transactionId) =>
+      console.log 'performed withdrawal'
+      new RSVP.Promise (resolve, reject) =>
+        @transactionId = transactionId
+        @status = Transaction.STATUS.COMPLETE
+        @save (err, transaction) =>
+          resolve transaction
+    .then (transaction) =>
+      console.log 'saved transactoin'
+      this_transaction = transaction
+      User.findOne
+        senderId: @senderId
+      .exec()
+    .then (user) =>
+      console.log 'updating balance'
+      user.updateBalance()
+    .then (user) =>
+      console.log 'resolving transaction'
+      RSVP.resolve transaction
+
 transactionSchema.methods.sendEmails = ->
   status = parseInt @status
   pending = parseInt Transaction.STATUS.PENDING
@@ -187,7 +212,7 @@ Transaction.serialize = (transactions, meta, additionalFields) ->
 # constants
 
 constants =
-  STATUS: ['PENDING', 'ANNOUNCED', 'DEPOSIT', 'COMPLETE']
+  STATUS: ['PENDING', 'ANNOUNCED', 'DEPOSIT', 'COMPLETE', 'WITHDRAWAL', 'ERROR']
   CONFIRMATION: ['PENDING', 'ACCEPTED', 'INSUFFICIENT_FUNDS']
   ACCEPTANCE: ['PENDING', 'ACCEPTED']
 
@@ -195,7 +220,7 @@ for c, a of constants
   Transaction[c] = {}
   for i, v of a
     Transaction[c][i] = v
-    Transaction[c][v] = i 
+    Transaction[c][v] = parseInt(i) 
 
 # exports
 

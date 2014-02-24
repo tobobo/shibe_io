@@ -18,6 +18,7 @@ transactionSchema = new mongoose.Schema
   confirmationCodeCreatedAt: Date
   acceptanceCode: String
   acceptanceCodeCreatedAt: Date
+  transactoinId: String
   usersAssigned:
     type: Boolean
     default: false
