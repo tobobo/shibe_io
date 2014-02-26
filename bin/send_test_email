@@ -4,8 +4,8 @@ request = require 'request'
 
 host = 'http://127.0.0.1:8888'
 
-from = process.env.SHIBE_TEST_EMAIL_FROM
-to = process.env.SHIBE_TEST_EMAIL_TO
+from = 'tobiasab@gmail.com'
+to = 'ashibe@mailinator.com'
 amount = 20
 subject = "#{amount} doge"
 events = [
