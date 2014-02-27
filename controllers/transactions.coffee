@@ -23,11 +23,13 @@ module.exports =
       else
         RSVP.reject "Cannot get all transactions"
     )().then (transactions) =>
+      console.log 'transactions', transactions
       if (query? and (query.confirmationCode? or query.acceptanceCode?)) and transactions.length > 0
         req.logOut res
       res.write Transaction.serialize transactions
       res.end()
     , (error) =>
+      console.log 'error!'
       res.statusCode = 403
       res.write JSON.stringify
         transactions: []
@@ -109,14 +111,17 @@ module.exports =
                   else
                     active = false
                     password = null
-
+                  console.log 'creating user'
                   user = new User
                     email: email
                     active: active
                   user.save (err, user) ->
+                    console.log "setting receiver id to #{user.id}"
                     transaction.receiverId = user.id
                     transaction.save (err, transaction) ->
+                      console.log 'saved transaction'
                       if user.active
+                        console.log 'setting user password'
                         user.setPassword password, (err, user) ->
                           req.logIn user, res, (error) ->
                             resolve user

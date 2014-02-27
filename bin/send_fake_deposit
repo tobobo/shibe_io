@@ -13,7 +13,7 @@ db.connect()
 db.mongoose.connection.on 'open', ->
   thisUser = null
   User.findOne
-    email: process.env.SHIBE_TEST_EMAIL_FROM
+    email: 'tobiasab@gmail.com'
   .exec().then (user) ->
     thisUser = user
     transaction = new Transaction

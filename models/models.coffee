@@ -1,5 +1,6 @@
 mongoose = require 'mongoose'
 RSVP = require 'rsvp'
+mailer = require '../config/mailer'
 
 transactionSchema = require '../models/transaction'
 userSchema = require '../models/user'
@@ -27,12 +28,20 @@ userSchema.post 'save', (user) ->
 transactionSchema.methods.assignUsers = ->
   userPromises = [@from, @to].map (address) =>
     new RSVP.Promise (resolve, reject) =>
-      User.find
+      console.log "finding user #{address}"
+      console.log 
         email: address
-      , (err, users) =>
-        resolve users[0]
+      if address?
+        User.findOne
+          email: address
+        , (err, user) =>
+          console.log 'first user', user
+          resolve user
+      else
+        resolve undefined
 
   RSVP.all(userPromises).then (users) =>
+    console.log 'got users'
     new RSVP.Promise (resolve, reject) =>
       if users[0]?
         resolve users
@@ -43,6 +52,7 @@ transactionSchema.methods.assignUsers = ->
           users[0] = sender
           resolve users
   .then (users) =>
+    console.log 'assigned users'
     new RSVP.Promise (resolve, reject) =>
       @senderId = users[0].id if users[0]?
       @receiverId = users[1].id if users[1]?
@@ -51,13 +61,13 @@ transactionSchema.methods.assignUsers = ->
         resolve transaction
 
 transactionSchema.methods.process = ->
+  console.log 'processing!', @status, @confirmation, @acceptance
   if (parseInt(@status) not in [parseInt(Transaction.STATUS.COMPLETE), parseInt(Transaction.STATUS.DEPOSIT)]) and parseInt(@confirmation) == parseInt(Transaction.CONFIRMATION.ACCEPTED) and parseInt(@acceptance) == parseInt(Transaction.ACCEPTANCE.ACCEPTED)
     @status = Transaction.STATUS.COMPLETE
     @completedAt = new Date
 
     new RSVP.Promise (resolve, reject) =>
       @save (err, transaction) =>
-        console.log 'transaction complete'
         resolve transaction
     .then (transaction) =>
       userPromises = [transaction.senderId, transaction.receiverId].map (userId) =>
@@ -68,9 +78,7 @@ transactionSchema.methods.process = ->
 
       RSVP.all(userPromises)
     .then (users) =>
-      new RSVP.Promise (resolve, reject) =>
-        @save (err, transaction) =>
-          resolve transaction
+      RSVP.resolve users
     .catch (reason) =>
       RSVP.reject reason
 
@@ -102,21 +110,18 @@ transactionSchema.methods.process = ->
 transactionSchema.methods.sendEmails = ->
   status = parseInt @status
   pending = parseInt Transaction.STATUS.PENDING
-  if status == pending and @senderId? and @receiverId?
-    console.log 'has stuff'
+  if status == pending
     userPromises = [@senderId, @receiverId].map (userId) ->
       new RSVP.Promise (resolve, reject) ->
         User.find
           _id: userId
         , (err, users) ->
-          console.log users
           resolve users[0]
 
     RSVP.all(userPromises).then (users) =>
       sender = users[0]
       receiver = users[1]
 
-      console.log sender.email, receiver.email
 
       senderMailData =
         from: mailer.default_from
@@ -142,8 +147,6 @@ transactionSchema.methods.sendEmails = ->
           @save (err, transaction) =>
             resolve transaction
       .catch (reason) =>
-        console.log "Error sending emails for transaction #{@id}"
-        console.log "reason:", reason
 
 
 # user methods that need transactions
