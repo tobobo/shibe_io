@@ -63,7 +63,7 @@ userSchema.methods.checkDeposits = ->
         transaction = new Transaction
           receiverId: @id
           amount: amountDeposited
-          status: Transaction.STATUS.DEPOSIT
+          status: Transaction.STATUS.COMPLETE
         transaction.save (err, transaction) =>
           resolve transaction.amount
       else

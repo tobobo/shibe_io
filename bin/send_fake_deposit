@@ -19,7 +19,7 @@ db.mongoose.connection.on 'open', ->
     transaction = new Transaction
       amount: 76029.039203
       receiverId: thisUser._id
-      status: Transaction.STATUS.DEPOSIT
+      status: Transaction.STATUS.COMPLETE
     new RSVP.Promise (resolve, reject) ->
       transaction.save (err, transaction) ->
         resolve transaction

@@ -19,6 +19,9 @@ transactionSchema = new mongoose.Schema
   acceptanceCode: String
   acceptanceCodeCreatedAt: Date
   transactoinId: String
+  executed:
+    type: Boolean
+    default: false
   usersAssigned:
     type: Boolean
     default: false

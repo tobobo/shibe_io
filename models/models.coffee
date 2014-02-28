@@ -1,19 +1,25 @@
 mongoose = require 'mongoose'
-RSVP = require 'rsvp'
+RSVP = require '../utils/rsvp'
 mailer = require '../config/mailer'
 
 transactionSchema = require '../models/transaction'
 userSchema = require '../models/user'
+mandrillEvents = require '../utils/mandrill_events'
 
 # post save hooks
 
-transactionSchema.post 'save', (transaction) ->
-  status = parseInt(transaction.status)
-  pending = parseInt(Transaction.STATUS.PENDING)
-  if status == pending and transaction.from? and transaction.to? and not transaction.usersAssigned
-    transaction.assignUsers().then (transaction) =>
-      transaction.sendEmails()
-  transaction.process()
+transactionSchema.pre 'save', (transaction, callback) ->
+  @assignUsers().then (transaction) =>
+    transaction.sendEmails()
+  .then (transaction) =>
+    console.log 'transaction', transaction
+    transaction.execute()
+  .then (transaction) =>
+    console.log 'transaction', transaction
+    transaction.updateBalances()
+  .then (transaction) =>
+    console.log 'transaction', transaction
+    callback null, transaction
 
 userSchema.post 'save', (user) ->
   unless user.activationEmailSent
@@ -25,140 +31,196 @@ userSchema.post 'save', (user) ->
 
 # transaction schema methods that need users
 
+
 transactionSchema.methods.assignUsers = ->
-  userPromises = [@from, @to].map (address) =>
-    new RSVP.Promise (resolve, reject) =>
-      console.log "finding user #{address}"
-      console.log 
-        email: address
-      if address?
-        User.findOne
-          email: address
-        , (err, user) =>
-          console.log 'first user', user
-          resolve user
-      else
-        resolve undefined
-
-  RSVP.all(userPromises).then (users) =>
-    console.log 'got users'
-    new RSVP.Promise (resolve, reject) =>
-      if users[0]?
-        resolve users
-      else
-        sender = new User
-          email: @from
-        sender.save (err, sender) =>
-          users[0] = sender
-          resolve users
-  .then (users) =>
-    console.log 'assigned users'
-    new RSVP.Promise (resolve, reject) =>
-      @senderId = users[0].id if users[0]?
-      @receiverId = users[1].id if users[1]?
-      @usersAssigned = true
-      @save (err, transaction) ->
-        resolve transaction
-
-transactionSchema.methods.process = ->
-  console.log 'processing!', @status, @confirmation, @acceptance
-  if (parseInt(@status) not in [parseInt(Transaction.STATUS.COMPLETE), parseInt(Transaction.STATUS.DEPOSIT)]) and parseInt(@confirmation) == parseInt(Transaction.CONFIRMATION.ACCEPTED) and parseInt(@acceptance) == parseInt(Transaction.ACCEPTANCE.ACCEPTED)
-    @status = Transaction.STATUS.COMPLETE
-    @completedAt = new Date
-
-    new RSVP.Promise (resolve, reject) =>
-      @save (err, transaction) =>
-        resolve transaction
-    .then (transaction) =>
-      userPromises = [transaction.senderId, transaction.receiverId].map (userId) =>
-        User.findOne
-          _id: userId
-        .exec().then (user) =>
-          user.updateBalance()
-
-      RSVP.all(userPromises)
+  if @usersAssigned
+    RSVP.resolve @
+  else
+    RSVP.all [@from, @to].map (address) =>
+      new RSVP.Promise (resolve, reject) ->
+        if address?
+          User.findOne
+            email: address
+          , (err, user) ->
+            if user?
+              resolve user
+            else
+              resolve undefined
+        else
+          resolve undefined
     .then (users) =>
-      RSVP.resolve users
-    .catch (reason) =>
-      RSVP.reject reason
-
-  else if @status == Transaction.STATUS.WITHDRAWAL and @receiverAddress?
-    console.log 'processing'
-    senderId = transaction.senderId
-    this_transaction = null
-    @process()
-    .then (transactionId) =>
-      console.log 'performed withdrawal'
-      new RSVP.Promise (resolve, reject) =>
-        @transactionId = transactionId
-        @status = Transaction.STATUS.COMPLETE
-        @save (err, transaction) =>
-          resolve transaction
-    .then (transaction) =>
-      console.log 'saved transactoin'
-      this_transaction = transaction
-      User.findOne
-        senderId: @senderId
-      .exec()
-    .then (user) =>
-      console.log 'updating balance'
-      user.updateBalance()
-    .then (user) =>
-      console.log 'resolving transaction'
-      RSVP.resolve transaction
+      if users[0]? then @senderId = users[0].id
+      if users[1]?
+        @receiverId = users[1].id
+        @acceptance = Transaction.ACCEPTANCE.ACCEPTED
+      @usersAssigned = true
+      RSVP.resolve @
 
 transactionSchema.methods.sendEmails = ->
-  status = parseInt @status
-  pending = parseInt Transaction.STATUS.PENDING
-  if status == pending
-    userPromises = [@senderId, @receiverId].map (userId) ->
-      new RSVP.Promise (resolve, reject) ->
-        User.find
-          _id: userId
-        , (err, users) ->
-          resolve users[0]
+  if @status == Transaction.STATUS.PENDING
+    senderMailData =
+      from: mailer.default_from
+      to: @from
+      subject: "Re: #{@subject}"
+      body: "You sent #{@amount} DOGE to #{@to}. To confirm this transaction, go to #{@confirmationURL()}"
 
-    RSVP.all(userPromises).then (users) =>
-      sender = users[0]
-      receiver = users[1]
+    receiverMailData =
+      from: mailer.default_from
+      to: @to
+      subject: "Re: #{@subject}"
+      body: "#{@from} has sent you #{@amount} DOGE. What a joyous occasion! We'll let you know when they've confirmed the transaction."
+
+    RSVP.all [senderMailData, receiverMailData].map (mailData) =>
+      new RSVP.Promise (resolve, reject) =>
+        mailer.sendMail mailData, (err, result) =>
+          if err then reject err
+          else resolve result
+    .then (results) =>
+      @status = Transaction.STATUS.ANNOUNCED
+      RSVP.resolve @
+    
+  else
+    RSVP.resolve @
+
+transactionSchema.methods.confirmWithCredentials = (email, password) ->
+  (=>
+    console.log 'really confirming'
+    if email == @from
+      if @senderId?
+        User.findById(@senderId).exec()
+      else
+        RSVP.resolve new User
+          email: email
+    else
+      RSVP.reject "Cannot confirm transaction with that email."
+  )().then (user) =>
+    new RSVP.Promise (resolve, reject) =>
+      if user.active
+        user.authenticate password, (err, user) =>
+          if err? then reject "Authentication error."
+          else resolve user
+      else
+        user.setPassword password, (err, user) =>
+          if err? then reject "error setting password"
+          else resolve user
+  .then (user) =>
+    new RSVP.Promise (resolve, reject) =>
+      if user.isModified()
+        user.save (err, user) =>
+          if err? then reject "error saving user"
+          else resolve user
+      else
+        resolve user
+  .then (user) =>
+    if user.balance >= @amount
+      @confirmation = Transaction.CONFIRMATION.ACCEPTED
+    else
+      @confirmation = Transaction.CONFIRMATION.INSUFFICIENT_FUNDS
+    RSVP.resolve @
+
+transactionSchema.methods.acceptWithCredentials = (email, password) ->
+  (=>
+    if email == @from
+      if @receiverId?
+        User.findById(@receiverId).exec()
+      else
+        RSVP.resolve new User
+          email: email
+          active: true
+          activationEmailSent: true
+    else
+      if @receiverId?
+        RSVP.reject "cannot confirm for that user"
+      else
+        RSVP.resolve new User
+          email: email
+  )().then (user) =>
+    new RSVP.Promise (resolve, reject) =>
+      if @receiverId?
+        user.authenticate password, (err, user) =>
+          if err? then reject "Authentication error."
+          else resolve user
+      else
+        @receiverId = user.id
+        if user.active
+          user.setPassword password, (err, user) =>
+            if err? then reject "error setting password"
+            else resolve user
+        else
+          resolve user
+  .then (user) =>
+    if user.active
+      @acceptance = Transaction.ACCEPTANCE.ACCEPTED
+    else
+      @acceptance = Transaction.ACCEPTANCE.NEEDS_EMAIL_CONFIRMATION
+    new RSVP.Promise (resolve, reject) =>
+      if user.isModified()
+        user.save (user, err) =>
+          if err? then reject "error saving user"
+          else resolve @
+      else
+        resolve @
 
 
-      senderMailData =
-        from: mailer.default_from
-        to: sender.email
-        subject: "Re: #{@subject}"
-        body: "You sent #{@amount} DOGE to #{receiver.email}. To confirm this transaction, go to #{@confirmationURL()}"
+transactionSchema.methods.processWithCredentials = (parameters) ->
+  transactionParams = undefined
+  console.log 'here'
+  email = parameters.userEmail.trim().toLowerCase()
+  console.log 'there'
+  password = parameters.userPassword
+  if parameters.acceptanceCode?
+    @acceptWithCredentials email, password
+  else if parameters.confirmationCode?
+    console.log 'confirming'
+    @confirmWithCredentials email, password
+  else
+    RSVP.reject "no code"
 
-      receiverMailData =
-        from: mailer.default_from
-        to: receiver.email
-        subject: "Re: #{@subject}"
-        body: "#{sender.email} has sent you #{@amount} DOGE. What a joyous occasion! We'll let you know when they've confirmed the transaction."
+transactionSchema.methods.execute = (parameters) =>
+  if @acceptance == Transaction.ACCEPTANCE.ACCEPTED and @confirmation == Transaction.CONFIRMATION.ACCEPTED and @status not in [Transaction.STATUS.COMPLETE, Transaction.STATUS.DEPOSIT]
+    @status = Transaction.STATUS.COMPLETE
+    new RSVP.Promise (resolve, reject) =>
+      sender = new User
+        id: @senderId
+      receiver = new User
+        id: @receiverId
+      RSVP.all [sender, receiver].map (user) =>
+        user.updateBalance @
+      .then (users) =>
+        RSVP.resolve @
+  else if @status == Transaction.STATUS.DEPOSIT
+    RSVP.resolve @
+  else
+    RSVP.resolve @
 
-      emailPromises = [senderMailData, receiverMailData].map (mailData) =>
-        new RSVP.Promise (resolve, reject) =>
-          mailer.sendMail mailData, (err, result) =>
-            if err then reject err
-            else resolve result
-
-      RSVP.all(emailPromises).then (emails) =>
-        new RSVP.Promise (resolve, reject) =>
-          @status = Transaction.STATUS.ANNOUNCED
-          @save (err, transaction) =>
-            resolve transaction
-      .catch (reason) =>
+transactionSchema.methods.updateBalances = (parameters) =>
+  if @status == Transaction.STATUS.COMPLETE and not @executed
+    users = []
+    [@senderId, @receiverId].forEach (userId) =>
+      if userId?
+        users.push new User
+          id: userId
+    RSVP.all users.map (user) =>
+      new RSVP.Promise (resolve, reject) =>
+        user.updateBalance @
+    .then (users) =>
+      @executed = true
+      resolve @
+  else
+    resolve @
 
 
 # user methods that need transactions
 
 userSchema.methods.getTransactions = ->
+  console.log 'getting transactions'
   Transaction.find({$or: [{senderId: @id}, {receiverId: @id}]}).sort('-createdAt').exec()
 
 userSchema.methods.acceptTransactions = ->
   new RSVP.Promise (resolve, reject) ->
     Transaction.find
       receiverId: @id
-      acceptance: Transaction.ACCEPTANCE.PENDING
+      acceptance: Transaction.ACCEPTANCE.NEEDS_EMAIL_CONFIRMATION
     , (err, transactions) ->
       resolve transactions
   .then (transactions) =>
@@ -177,19 +239,27 @@ userSchema.methods.acceptTransactions = ->
       @save (err, user) ->
         resolve transactions
 
-userSchema.methods.updateBalance = ->
+userSchema.methods.updateBalance = (transaction) ->
   sent = 0
   received = 0
   deposited = 0
+  console.log 'updating balance'
   @getTransactions().then (transactions) =>
+    console.log 'found transactions'
+    if transaction?
+      transactions.push transaction
     new RSVP.Promise (resolve, reject) =>
+      console.log 'going', transactions
       transactions.forEach (transaction) =>
-        if transaction.receiverId == @id
-          received += transaction.amount
-        else if parseInt(transaction.status) == parseInt(Transaction.STATUS.DEPOSIT)
-          deposited += transaction.amount
-        else if transaction.senderId == @id
-          sent += transaction.amount
+        console.log 'foreaching'
+        if transaction.status == Transaction.STATUS.COMPLETE
+          if transaction.receiverId == @id
+            if transaction.senderId?
+              received += transaction.amount
+            else
+              deposited += transaction.amount
+          else if transaction.senderId == @id
+            sent += transaction.amount
       if @received != received or @deposited != deposited or @sent != sent
         @received = received
         @deposited = deposited
@@ -212,12 +282,22 @@ Transaction.serialize = (transactions, meta, additionalFields) ->
     transactions: transactions.map (transaction) -> transaction.serializeToObj(additionalFields)
     meta: meta
 
+Transaction.createFromEmail = (emails) ->
+  transactionPromises = mandrillEvents.process(emails).map (transaction) ->
+    new RSVP.Promise (resolve, reject) ->
+      transactionModel = new Transaction transaction
+      transactionModel.save (transaction, err) ->
+        if err != undefined
+          transaction._error = err
+        resolve transaction
+  RSVP.all(transactionPromises)      
+
 # constants
 
 constants =
-  STATUS: ['PENDING', 'ANNOUNCED', 'DEPOSIT', 'COMPLETE', 'WITHDRAWAL', 'ERROR']
+  STATUS: ['PENDING', 'ANNOUNCED', 'DEPOSIT', 'COMPLETE', 'WITHDRAWAL', 'ERROR', 'EXECUTED']
   CONFIRMATION: ['PENDING', 'ACCEPTED', 'INSUFFICIENT_FUNDS']
-  ACCEPTANCE: ['PENDING', 'ACCEPTED']
+  ACCEPTANCE: ['PENDING', 'ACCEPTED', 'NEEDS_EMAIL_CONFIRMATION']
 
 for c, a of constants
   Transaction[c] = {}
