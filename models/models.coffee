@@ -37,7 +37,7 @@ transactionSchema.methods.assignUsers = ->
   if @usersAssigned
     RSVP.resolve @
   else
-    RSVP.all [@from, @to].map (address) =>
+    RSVP.all( [@from, @to].map (address) =>
       new RSVP.Promise (resolve, reject) ->
         if address?
           User.findOne
@@ -49,7 +49,7 @@ transactionSchema.methods.assignUsers = ->
               resolve undefined
         else
           resolve undefined
-    .then (users) =>
+    ).then (users) =>
       if users[0]? then @senderId = users[0].id
       if users[1]?
         @receiverId = users[1].id
@@ -71,12 +71,12 @@ transactionSchema.methods.sendEmails = ->
       subject: "Re: #{@subject}"
       body: "#{@from} has sent you #{@amount} DOGE. What a joyous occasion! We'll let you know when they've confirmed the transaction."
 
-    RSVP.all [senderMailData, receiverMailData].map (mailData) =>
+    RSVP.all( [senderMailData, receiverMailData].map (mailData) =>
       new RSVP.Promise (resolve, reject) =>
         mailer.sendMail mailData, (err, result) =>
           if err then reject err
           else resolve result
-    .then (results) =>
+    ).then (results) =>
       @status = Transaction.STATUS.ANNOUNCED
       RSVP.resolve @
     
