@@ -75,90 +75,12 @@ module.exports =
         if req.body[v]?
           query[p] = req.body[v]
 
-      Transaction.find query, (err, transactions) =>
-        if transactions.length > 0
-          transaction = transactions[0]
-          new RSVP.Promise (resolve, reject) =>
-            if req.body.transaction.userEmail? and req.body.transaction.userPassword?
-              email = req.body.transaction.userEmail
-              password = req.body.transaction.userPassword
-              User.find
-                email: email
-              , (err, users) =>
-                if users.length > 0
-                  user = users[0]
-                  if user.active
-                    User.authenticate() user.email, password, (err, user) ->
-                      if err?
-                        reject "Authentication error"
-                      else
-                        req.logIn user, res, (error) ->
-                          console.log 'error', error
-                          console.log 'logged in', user.email
-                          resolve user
-                  else
-                    console.log 'activating user'
-                    user.active = true
-                    user.save (err, user) ->
-                      user.setPassword password, (err, user) ->
-                        req.logIn user, res, (error) ->
-                          resolve user
-                else if req.body.transaction.acceptanceCode?
-
-                  if email == transaction.to
-                    active = true
-                    password = password
-                  else
-                    active = false
-                    password = null
-                  console.log 'creating user'
-                  user = new User
-                    email: email
-                    active: active
-                  user.save (err, user) ->
-                    console.log "setting receiver id to #{user.id}"
-                    transaction.receiverId = user.id
-                    transaction.save (err, transaction) ->
-                      console.log 'saved transaction'
-                      if user.active
-                        console.log 'setting user password'
-                        user.setPassword password, (err, user) ->
-                          req.logIn user, res, (error) ->
-                            resolve user
-                      else
-                        req.logOut res
-                        resolve user
-                else
-                  reject "Authentication error"
-            else
-              reject "Please enter a username and password"
-          .then (user) ->
-            console.log "confirmed by #{user.email}"
-            if req.body.transaction.confirmationCode?
-              if parseInt(req.body.transaction.confirmation) == parseInt(Transaction.CONFIRMATION.ACCEPTED)
-                if user.balance < transaction.amount
-                  transaction.confirmation = Transaction.CONFIRMATION.INSUFFICIENT_FUNDS
-                else
-                  transaction.confirmation = Transaction.CONFIRMATION.ACCEPTED
-              transaction.senderId = user.id
-
-            else if req.body.transaction.acceptanceCode?
-                  
-              transaction.acceptance = req.body.transaction.acceptance
-              transaction.receiverId = user.id
-
-            transaction.save (err, transaction) ->
-              res.write transaction.serialize()
-              res.end()
-
-          , (error) ->
-            req.logOut res
-            res.write JSON.stringify
-              transaction: null
-              meta:
-                error: error
+      Transaction.findOne query, (err, transaction) =>
+        if transaction?
+          transaction.processWithCredentials req.body.transaction
+          .then (transaction) ->
+            res.write transaction.serialize()
             res.end()
-
         else
           res.write JSON.stringify
             transaction: null

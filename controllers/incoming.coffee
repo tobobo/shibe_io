@@ -5,6 +5,7 @@ Transaction = models.Transaction
 
 module.exports =
   index: (req, res, data) ->
+    console.log 'incoming!!!'
     Transaction.createFromEmail(req.body.mandrill_events).then (transactions) ->
       console.log 'created transaction from email'
       res.write Transaction.serialize (transactions)
